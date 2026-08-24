@@ -8,9 +8,13 @@ module TestProf
 
         def initialize(group, parent, level)
           @name = group&.fetch(:name)
-          @location = group&.fetch(:location)
+          @file_path, @line_number = group&.fetch(:location)
           @parent = parent
           @level = level
+        end
+
+        def location
+          "#{@file_path}:#{@line_number}"
         end
 
         def inspect
@@ -23,9 +27,13 @@ module TestProf
 
         def initialize(example, group, level)
           @name = example&.fetch(:name)
-          @location = example&.fetch(:location)
+          @file_path, @line_number = example&.fetch(:location)
           @group = group
           @level = level
+        end
+
+        def location
+          "#{@file_path}:#{@line_number}"
         end
 
         def inspect
@@ -85,18 +93,22 @@ module TestProf
 
         def initialize(params)
           @name = params[:name]
-          @file_path, @line_number = params[:location]
           @parent = params[:parent]
+          @location = Location.new(*params[:location])
 
           @dependencies = {}
+        end
+
+        def location
+          @location.inspect
         end
 
         def dependency(params)
           @dependencies[params[:name]] = Definition.new(parent: self, **params)
         end
 
-        def location
-          "#{@file_path}:#{@line_number}"
+        def inspect
+          "definition (#{@name}, #{location})"
         end
 
         def eql?(definition)
@@ -111,12 +123,33 @@ module TestProf
           @name.hash
         end
 
-        def inspect
-          "definition (#{@name}, #{location})"
-        end
-
         def type
           "d"
+        end
+      end
+
+      class Location
+        attr_reader :file_path, :line_number
+
+        def initialize(file_path, line_number)
+          @file_path = file_path
+          @line_number = line_number
+        end
+
+        def inspect
+          "#{@file_path}:#{@line_number}"
+        end
+
+        def eql?(location)
+          @file_path == location.file_path && @line_number == location.line_number
+        end
+
+        def ==(location)
+          eql?(location)
+        end
+
+        def hash
+          file_path.hash
         end
       end
 
