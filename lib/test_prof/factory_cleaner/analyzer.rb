@@ -42,19 +42,21 @@ module TestProf
         @level -= 1
       end
 
-      def let_started(name)
+      def let_started(name, location)
         if @current_let
-          @current_let = @current_let.dependency(name)
-        else
-          @current_let = Let.new(name)
+          @current_let = @current_let.dependency(name, location)
+        elsif location
+          @current_let = Let.new(name, location)
         end
       end
 
       def let_finished(name)
-        @lets[name] ||= []
-        @lets[name] << @current_let
+        if @current_let
+          @lets[name] ||= Set.new
+          @lets[name] << @current_let
+        end
 
-        @currrent_let = @current_let&.parent
+        @current_let = @current_let&.parent
       end
 
       def factory_started(factory, **options)
@@ -67,7 +69,7 @@ module TestProf
 
       def factory_finished(factory)
         if @current_factory&.parent.nil?
-          @factories[factory] ||= []
+          @factories[factory] ||= Set.new
           @factories[factory] << @current_factory
         end
 

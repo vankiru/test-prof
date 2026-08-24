@@ -10,6 +10,7 @@ module TestProf
 
         def print
           puts "factories = #{@analyzer.factories}"
+          puts "======================================="
           puts "lets = #{@analyzer.lets}"
         end
       end

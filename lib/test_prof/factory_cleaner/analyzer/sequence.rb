@@ -34,47 +34,78 @@ module TestProf
       end
 
       class Factory
-        attr_reader :name, :parent
+        attr_reader :name, :parent, :definition
 
-        def initialize(name, let, parent = nil)
+        def initialize(name, definition, parent = nil)
           @name = name
-          @let = let
+          @definition = definition
           @parent = parent
           @associations = []
         end
 
-        def association(name, let)
-          let = nil if let == @let
-          association = Factory.new(name, let, self)
+        def association(name, definition)
+          definition = nil if definition == @definition
+          association = Factory.new(name, definition, self)
 
           @associations << association
           association
         end
 
+        def eql?(factory)
+          factory.is_a?(Factory) && @name == factory.name && @definition.eql?(factory.definition)
+        end
+
+        def hash
+          @name.hash
+        end
+
         def inspect
-          "factory (#{@name}, #{let.name}, #{@associations.map(&:name)})"
+          "factory (#{@name}, #{@definition&.location&.join(':')})"
         end
       end
 
       class Let
-        attr_reader :parent, :name
+        attr_reader :parent, :name, :location
 
-        def initialize(name, parent = nil)
+        def initialize(name, location, parent = nil)
           @name = name
-          @location = nil
+          @location = location
           @parent = parent
           @dependencies = []
         end
 
-        def dependency(name)
-          dependency = Let.new(name, self)
+        def dependency(name, location)
+          dependency = Let.new(name, location, self)
 
           @dependencies << dependency
           dependency
         end
 
+        def eql?(let)
+          let.is_a?(Let) && let.location == @location
+        end
+
+        def hash
+          @name.hash
+        end
+
         def inspect
-          "let (#{@name}, #{@dependencies.count})"
+          "let (#{@name}, #{@location.join(':')})"
+        end
+      end
+
+      class Set
+        def initialize
+          @data = {}
+        end
+
+        def <<(item)
+          @data[item] ||= 0
+          @data[item] += 1
+        end
+
+        def inspect
+          @data
         end
       end
     end
