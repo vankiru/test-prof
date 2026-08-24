@@ -43,37 +43,60 @@ module TestProf
       end
 
       def let_started(name, location)
+        @level += 1
+
+        params = {
+          name:,
+          location:,
+        }
+
         if @current_let
-          @current_let = @current_let.dependency(name, location)
+          @current_let = @current_let.dependency(params)
         elsif location
-          @current_let = Let.new(name, location)
+          @current_let = Let.new(params)
         end
       end
 
       def let_finished(name)
         if @current_let
-          @lets[name] ||= Set.new
-          @lets[name] << @current_let
+          @lets.delete(@level + 1)
+          @lets[@level] ||= {}
+          @lets[@level][name] = @current_let
         end
 
         @current_let = @current_let&.parent
+        @level -= 1
       end
 
       def factory_started(factory, **options)
+        @level += 1
+
+        params = {
+          name: factory,
+          definition: @current_let,
+          example: @current_example,
+        }
+
         if @current_factory
-          @current_factory = @current_factory.association(factory, @current_let)
+          @current_factory = @current_factory.association(params)
         else
-          @current_factory = Factory.new(factory, @current_let)
+          @current_factory = Factory.new(params)
         end
       end
 
       def factory_finished(factory)
+        @lets[@level]&.each do |name, let|
+          @current_factory.option(name, let)
+        end
+        @lets.delete(@level)
+
         if @current_factory&.parent.nil?
           @factories[factory] ||= Set.new
           @factories[factory] << @current_factory
         end
 
         @current_factory = @current_factory&.parent
+        @level -= 1
       end
 
       def print

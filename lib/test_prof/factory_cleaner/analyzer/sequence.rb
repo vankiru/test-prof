@@ -34,25 +34,47 @@ module TestProf
       end
 
       class Factory
-        attr_reader :name, :parent, :definition
+        attr_reader :name, :parent, :definition, :options, :associations
 
-        def initialize(name, definition, parent = nil)
-          @name = name
-          @definition = definition
-          @parent = parent
-          @associations = []
+        def initialize(params)
+          @name = params[:name]
+          @definition = params[:definition]
+          @parent = params[:parent]
+          @example = params[:example]
+
+          @associations = {}
+          @options = {}
         end
 
-        def association(name, definition)
-          definition = nil if definition == @definition
-          association = Factory.new(name, definition, self)
+        def association(params)
+          params[:definition] = nil if params[:definition] == @definition
+          @associations[params[:name]] = Factory.new(parent: self, **params)
+        end
 
-          @associations << association
-          association
+        def option(name, definition)
+          @options[name] = definition
         end
 
         def eql?(factory)
-          factory.is_a?(Factory) && @name == factory.name && @definition.eql?(factory.definition)
+          if @name == factory.name
+             ta = @associations.map { |n, a| "#{n} => #{a&.definition&.location&.join(':') || 'n'}"  }.join(", ")
+             to = @options.map { |n, o| "#{n} => #{o.location.join(':')}"  }.join(", ")
+
+             fa = factory.associations.map { |n, a| "#{n} => #{a&.definition&.location&.join(':') || 'n'}"  }.join(", ")
+             fo = factory.options.map { |n, o| "#{n} => #{o.location.join(':')}"  }.join(", ")
+
+             #puts "=== #{@name} ==="
+             #puts "associations = #{ta} - #{fa}"
+             #puts "options = #{to} - #{fo}"
+          end
+
+          factory.is_a?(Factory) &&
+            @name == factory.name &&
+            @definition.eql?(factory.definition) &&
+            @associations.size == factory.associations.size &&
+            @options.size == factory.options.size &&
+            @associations.all? { |key, association| association.eql?(factory.associations[key]) } &&
+            @options.all? { |key, option| option.eql?(factory.options[key]) }
         end
 
         def hash
@@ -60,25 +82,27 @@ module TestProf
         end
 
         def inspect
-          "factory (#{@name}, #{@definition&.location&.join(':')})"
+          location = @definition&.location&.join(':')
+          associations = @associations.map { |n, a| "#{n} => #{a&.definition&.location&.join(':') || 'n'}"  }.join(", ")
+          options = @options.map { |n, o| "#{n} => #{o.location.join(':')}"  }.join(", ")
+
+          "factory (#{@name}, #{location}, #{associations}, #{options})"
         end
       end
 
       class Let
         attr_reader :parent, :name, :location
 
-        def initialize(name, location, parent = nil)
-          @name = name
-          @location = location
-          @parent = parent
-          @dependencies = []
+        def initialize(params)
+          @name = params[:name]
+          @location = params[:location]
+          @parent = params[:parent]
+
+          @dependencies = {}
         end
 
-        def dependency(name, location)
-          dependency = Let.new(name, location, self)
-
-          @dependencies << dependency
-          dependency
+        def dependency(params)
+          @dependencies[params[:name]] = Let.new(parent: self, **params)
         end
 
         def eql?(let)
@@ -102,6 +126,10 @@ module TestProf
         def <<(item)
           @data[item] ||= 0
           @data[item] += 1
+        end
+
+        def each(&block)
+          @data.each(&block)
         end
 
         def inspect

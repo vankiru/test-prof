@@ -9,9 +9,15 @@ module TestProf
         end
 
         def print
-          puts "factories = #{@analyzer.factories}"
-          puts "======================================="
-          puts "lets = #{@analyzer.lets}"
+          @analyzer.factories.each do |name, variations|
+            puts "=== #{name} ==="
+            variations.each do |factory, stat|
+              puts "#{factory.inspect} => #{stat}"
+            end
+          end
+          #puts "factories = #{@analyzer.factories}"
+          #puts "======================================="
+          #puts "lets = #{@analyzer.lets}"
         end
       end
     end
