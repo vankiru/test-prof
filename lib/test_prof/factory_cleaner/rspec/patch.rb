@@ -47,20 +47,20 @@ module TestProf
         location = parse_location
         if block.arity == 1
           define_method(name) do
-            FactoryCleaner.analyzer.let_started(name, location)
+            FactoryCleaner.analyzer.definition_started(name, location)
             begin
               __memoized.fetch_or_store(name) { super(RSpec.current_example, &nil) }
             ensure
-              FactoryCleaner.analyzer.let_finished(name)
+              FactoryCleaner.analyzer.definition_finished(name)
             end
           end
         else
           define_method(name) do
-            FactoryCleaner.analyzer.let_started(name, location)
+            FactoryCleaner.analyzer.definition_started(name, location)
             begin
               __memoized.fetch_or_store(name) { super(&nil) }
             ensure
-              FactoryCleaner.analyzer.let_finished(name)
+              FactoryCleaner.analyzer.definition_finished(name)
             end
           end
         end

@@ -6,7 +6,7 @@ require "test_prof/factory_cleaner/analyzer/printer"
 module TestProf
   module FactoryCleaner
     class Analyzer
-      attr_reader :factories, :lets
+      attr_reader :factories
 
       def initialize
         @printer = Printer.new(self)
@@ -14,7 +14,8 @@ module TestProf
 
       def start
         @factories = {}
-        @lets = {}
+        @options = {}
+        @examples = {}
 
         @current_group = Group.new(nil, nil, 0)
         @current_example = nil
@@ -36,45 +37,54 @@ module TestProf
       def example_started(example)
         @level += 1
         @current_example = Example.new(example, @current_group, @level)
+        @examples[@current_example] = []
       end
 
       def example_finished(example)
         @level -= 1
       end
 
-      def let_started(name, location)
+      def definition_started(name, location)
         @level += 1
 
+        #puts "+ definition start #{name} - #{@level}"
         params = {
           name:,
           location:,
         }
 
-        if @current_let
-          @current_let = @current_let.dependency(params)
+        if @current_definition
+          @current_definition = @current_definition.dependency(params)
         elsif location
-          @current_let = Let.new(params)
+          @current_definition = Definition.new(params)
         end
       end
 
-      def let_finished(name)
-        if @current_let
-          @lets.delete(@level + 1)
-          @lets[@level] ||= {}
-          @lets[@level][name] = @current_let
+      def definition_finished(name)
+        if @current_definition
+          factory = @examples[@current_example].find do |factory|
+            factory.definition == @current_definition
+          end
+
+          @options[@level] ||= {}
+          @options[@level][name] = factory || @current_definition
+          #puts "+ definition finish #{name} - #{@level} - #{@options[@level][name].inspect}"
+
+          @options.delete(@level + 1)
         end
 
-        @current_let = @current_let&.parent
+        @current_definition = @current_definition&.parent
         @level -= 1
       end
 
       def factory_started(factory, **options)
         @level += 1
 
+        #puts "= factory start #{factory} - #{@level} - #{@options[@level]&.map(&:inspect)}"
         params = {
           name: factory,
-          definition: @current_let,
-          example: @current_example,
+          definition: @current_definition,
+          options: @options.delete(@level)
         }
 
         if @current_factory
@@ -85,10 +95,9 @@ module TestProf
       end
 
       def factory_finished(factory)
-        @lets[@level]&.each do |name, let|
-          @current_factory.option(name, let)
-        end
-        @lets.delete(@level)
+        #puts "= factory finish #{factory} - #{@level}"
+
+        @examples[@current_example] << @current_factory
 
         if @current_factory&.parent.nil?
           @factories[factory] ||= Set.new

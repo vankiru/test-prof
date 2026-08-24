@@ -40,10 +40,8 @@ module TestProf
           @name = params[:name]
           @definition = params[:definition]
           @parent = params[:parent]
-          @example = params[:example]
-
+          @options = params[:options] || {}
           @associations = {}
-          @options = {}
         end
 
         def association(params)
@@ -51,23 +49,7 @@ module TestProf
           @associations[params[:name]] = Factory.new(parent: self, **params)
         end
 
-        def option(name, definition)
-          @options[name] = definition
-        end
-
         def eql?(factory)
-          if @name == factory.name
-             ta = @associations.map { |n, a| "#{n} => #{a&.definition&.location&.join(':') || 'n'}"  }.join(", ")
-             to = @options.map { |n, o| "#{n} => #{o.location.join(':')}"  }.join(", ")
-
-             fa = factory.associations.map { |n, a| "#{n} => #{a&.definition&.location&.join(':') || 'n'}"  }.join(", ")
-             fo = factory.options.map { |n, o| "#{n} => #{o.location.join(':')}"  }.join(", ")
-
-             #puts "=== #{@name} ==="
-             #puts "associations = #{ta} - #{fa}"
-             #puts "options = #{to} - #{fo}"
-          end
-
           factory.is_a?(Factory) &&
             @name == factory.name &&
             @definition.eql?(factory.definition) &&
@@ -81,32 +63,48 @@ module TestProf
           @name.hash
         end
 
+        def location
+          @definition&.location
+        end
+
         def inspect
-          location = @definition&.location&.join(':')
-          associations = @associations.map { |n, a| "#{n} => #{a&.definition&.location&.join(':') || 'n'}"  }.join(", ")
-          options = @options.map { |n, o| "#{n} => #{o.location.join(':')}"  }.join(", ")
+          location = @definition&.location
+          associations = @associations.map { |n, a| "#{n} => #{a.type}:#{a.location || 'n'}"  }.join(", ")
+          options = @options.map { |n, o| "#{n} => #{o.type}:#{o.location}" }.join(", ")
 
           "factory (#{@name}, #{location}, #{associations}, #{options})"
         end
+
+        def type
+          "f"
+        end
       end
 
-      class Let
-        attr_reader :parent, :name, :location
+      class Definition
+        attr_reader :parent, :name
 
         def initialize(params)
           @name = params[:name]
-          @location = params[:location]
+          @file_path, @line_number = params[:location]
           @parent = params[:parent]
 
           @dependencies = {}
         end
 
         def dependency(params)
-          @dependencies[params[:name]] = Let.new(parent: self, **params)
+          @dependencies[params[:name]] = Definition.new(parent: self, **params)
         end
 
-        def eql?(let)
-          let.is_a?(Let) && let.location == @location
+        def location
+          "#{@file_path}:#{@line_number}"
+        end
+
+        def eql?(definition)
+          definition.is_a?(Definition) && definition.location == location
+        end
+
+        def ==(definition)
+          eql?(definition)
         end
 
         def hash
@@ -114,11 +112,17 @@ module TestProf
         end
 
         def inspect
-          "let (#{@name}, #{@location.join(':')})"
+          "definition (#{@name}, #{location})"
+        end
+
+        def type
+          "d"
         end
       end
 
       class Set
+        include Enumerable
+
         def initialize
           @data = {}
         end
