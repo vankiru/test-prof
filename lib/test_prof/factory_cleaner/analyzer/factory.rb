@@ -29,7 +29,9 @@ module TestProf
         end
 
         def association(params)
-          params[:definition] = nil if params[:definition] == @definition
+          if @definition.nil? || @definition == params[:definition]
+            params[:definition] = nil
+          end
 
           name = params[:name]
           factory = Factory.new(parent: self, **params)
@@ -73,6 +75,15 @@ module TestProf
           end
 
           "f(#{name}, #{location}, #{params.join(", ")})"
+        end
+        alias_method :inspect, :to_s
+
+        def short_desc
+          "f(#{name}, #{location})"
+        end
+
+        def depth
+          1 + explicit_associations.values.sum(&:depth) + implicit_associations.values.sum(&:depth)
         end
       end
     end

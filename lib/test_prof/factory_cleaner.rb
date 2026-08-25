@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require "test_prof/factory_cleaner/analyzer"
+require "test_prof/factory_cleaner/planner"
+require "test_prof/factory_cleaner/executor"
 require "test_prof/factory_cleaner/rspec"
 require "test_prof/factory_cleaner/factory_bot"
 
@@ -22,6 +24,10 @@ module TestProf
 
       def analyzer
         @analyzer ||= Analyzer.new
+      end
+
+      def planner
+        @planner ||= Planner.new(analyzer)
       end
     end
   end

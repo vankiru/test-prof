@@ -4,7 +4,7 @@ module TestProf
   module FactoryCleaner
     class Analyzer
       class Definition
-        attr_reader :name, :parent, :location
+        attr_reader :name, :parent, :location, :attributes
 
         def initialize(params)
           @name = params[:name]
@@ -21,6 +21,8 @@ module TestProf
         def to_s
           "d(#{@name}, #{location})"
         end
+        alias_method :inspect, :to_s
+        alias_method :short_desc, :to_s
 
         def eql?(definition)
           definition.is_a?(Definition) && definition.location == location

@@ -10,7 +10,7 @@ require "test_prof/factory_cleaner/analyzer/printer"
 module TestProf
   module FactoryCleaner
     class Analyzer
-      attr_reader :factories, :factory_usages
+      attr_reader :factories, :examples
 
       def initialize
         @printer = Printer.new(self)
@@ -18,7 +18,6 @@ module TestProf
 
       def start
         @factories = {}
-        @factory_usages = {}
         @overrides = {}
         @examples = {}
 
@@ -105,10 +104,7 @@ module TestProf
 
         @examples[@current_example] << @current_factory
 
-        if @current_factory.parent
-          @factory_usages[factory] ||= Set.new
-          @factory_usages[factory] << {name: @current_factory.parent.name, definition: @current_factory.parent.definition}
-        else
+        unless @current_factory.parent
           @factories[factory] ||= Set.new
           @factories[factory] << @current_factory
         end

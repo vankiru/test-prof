@@ -19,6 +19,10 @@ module TestProf
           @data.each(&block)
         end
 
+        def keys
+          @data.keys
+        end
+
         def to_s
           @data
         end
