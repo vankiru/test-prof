@@ -3,7 +3,7 @@
 module TestProf
   module FactoryCleaner
     class Analyzer
-      class Set
+      class Stats
         include Enumerable
 
         def initialize

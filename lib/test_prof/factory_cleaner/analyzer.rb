@@ -4,13 +4,13 @@ require "test_prof/factory_cleaner/analyzer/group"
 require "test_prof/factory_cleaner/analyzer/example"
 require "test_prof/factory_cleaner/analyzer/definition"
 require "test_prof/factory_cleaner/analyzer/factory"
-require "test_prof/factory_cleaner/analyzer/set"
+require "test_prof/factory_cleaner/analyzer/stats"
 require "test_prof/factory_cleaner/analyzer/printer"
 
 module TestProf
   module FactoryCleaner
     class Analyzer
-      attr_reader :factories, :examples
+      attr_reader :factories
 
       def initialize
         @printer = Printer.new(self)
@@ -19,7 +19,6 @@ module TestProf
       def start
         @factories = {}
         @overrides = {}
-        @examples = {}
 
         @root = Group.new(nil, nil, 0)
         @current_group = @root
@@ -42,7 +41,6 @@ module TestProf
       def example_started(example)
         @level += 1
         @current_example = Example.new(example, @current_group, @level)
-        @examples[@current_example] = []
       end
 
       def example_finished(example)
@@ -67,7 +65,7 @@ module TestProf
 
       def definition_finished(name)
         if @current_definition
-          factory = @examples[@current_example].find do |factory|
+          factory = @current_example.factories.find do |factory|
             factory.definition == @current_definition
           end
 
@@ -77,6 +75,9 @@ module TestProf
 
           @overrides.delete(@level + 1)
         end
+
+        @current_example.definitions << @current_definition
+        @current_definition.examples << @current_example
 
         @current_definition = @current_definition&.parent
         @level -= 1
@@ -102,10 +103,11 @@ module TestProf
       def factory_finished(factory)
         #puts "= factory finish #{factory} - #{@level}"
 
-        @examples[@current_example] << @current_factory
+        @current_example.factories << @current_factory
+        @current_factory.examples << @current_example
 
         unless @current_factory.parent
-          @factories[factory] ||= Set.new
+          @factories[factory] ||= Stats.new
           @factories[factory] << @current_factory
         end
 

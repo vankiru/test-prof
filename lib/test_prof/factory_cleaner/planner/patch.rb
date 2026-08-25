@@ -16,6 +16,10 @@ module TestProf
           object.name
         end
 
+        def explicit_factory?
+          false
+        end
+
         def to_s
           "#{type}(#{object.short_desc}, #{dependencies.map(&:name).join("-")}, #{@options})"
         end
@@ -29,6 +33,10 @@ module TestProf
           @options[:order]
         end
 
+        def explicit_factory?
+          true
+        end
+
         def type
           "e"
         end
@@ -36,10 +44,6 @@ module TestProf
 
       class ImplicitFactoryPatch < Patch
         alias_method :factory, :object
-
-        def to_s
-          "#{type}(#{object}, #{dependencies.map(&:name).join("-")}, #{@options})"
-        end
 
         def type
           "i"

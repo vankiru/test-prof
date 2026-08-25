@@ -4,7 +4,7 @@ module TestProf
   module FactoryCleaner
     class Analyzer
       class Definition
-        attr_reader :name, :parent, :location, :attributes
+        attr_reader :name, :parent, :location, :attributes, :examples
 
         def initialize(params)
           @name = params[:name]
@@ -12,6 +12,7 @@ module TestProf
           @location = Location.new(*params[:location])
 
           @attributes = {}
+          @examples = Set.new
         end
 
         def attribute(params)

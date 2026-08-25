@@ -4,7 +4,7 @@ module TestProf
   module FactoryCleaner
     class Analyzer
       class Factory
-        attr_reader :name, :parent, :definition, :explicit_associations, :implicit_associations, :attributes
+        attr_reader :name, :parent, :definition, :explicit_associations, :implicit_associations, :attributes, :examples
 
         def initialize(params)
           @name = params[:name]
@@ -14,6 +14,8 @@ module TestProf
           @attributes = {}
           @explicit_associations = {}
           @implicit_associations = {}
+
+          @examples = Set.new
 
           params[:overrides]&.each do |key, value|
             if value.is_a?(Factory)

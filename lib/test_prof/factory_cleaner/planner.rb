@@ -64,7 +64,7 @@ module TestProf
           build_implicit_factory_patch(association)
         end
 
-        @plan << ImplicitFactoryPatch.new(factory, patches, suggestion: suggest_patch(factory))
+        @plan << ImplicitFactoryPatch.new(factory, patches, suggestions: suggest_patches(factory))
       end
 
       def build_attribute_patch(definition)
@@ -75,7 +75,10 @@ module TestProf
         @plan << AttributePatch.new(definition, patches)
       end
 
-      def suggest_patch(factory)
+      def suggest_patches(factory)
+        @plan.ordered.select do |patch|
+          patch.explicit_factory? && patch.object.name == factory.name
+        end
       end
     end
   end
