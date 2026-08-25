@@ -10,24 +10,24 @@ module TestProf
 
         def print
           puts "======================================="
-          puts "========= Factory Definitions ========="
+          puts "============== Factories =============="
 
-          @analyzer.factory_definitions.each do |name, variations|
-            puts "=== #{name} ==="
+          @analyzer.factories.each do |name, variations|
+            puts "----- #{name} -----"
             variations.each do |factory, stat|
-              puts "#{factory.inspect} => #{stat}"
+              puts "#{factory} => #{stat}"
             end
           end
 
-          puts "======================================="
-          puts "=========== Factory Usages ============"
+          #puts "======================================="
+          #puts "=========== Factory Usages ============"
 
-          @analyzer.factory_usages.each do |name, parents|
-            puts "=== #{name} ==="
-            parents.each do |factory, stat|
-              puts "(#{factory[:name]}, #{factory[:definition]&.location}) => #{stat}"
-            end
-          end
+          #@analyzer.factory_usages.each do |name, parents|
+            #puts "=== #{name} ==="
+            #parents.each do |factory, stat|
+              #puts "(#{factory[:name]}, #{factory[:definition]&.location}) => #{stat}"
+            #end
+          #end
         end
       end
     end

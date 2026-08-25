@@ -1,21 +1,25 @@
 # frozen_string_literal: true
 
-require "test_prof/factory_cleaner/analyzer/sequence"
+require "test_prof/factory_cleaner/analyzer/group"
+require "test_prof/factory_cleaner/analyzer/example"
+require "test_prof/factory_cleaner/analyzer/definition"
+require "test_prof/factory_cleaner/analyzer/factory"
+require "test_prof/factory_cleaner/analyzer/set"
 require "test_prof/factory_cleaner/analyzer/printer"
 
 module TestProf
   module FactoryCleaner
     class Analyzer
-      attr_reader :factory_definitions, :factory_usages
+      attr_reader :factories, :factory_usages
 
       def initialize
         @printer = Printer.new(self)
       end
 
       def start
-        @factory_definitions = {}
+        @factories = {}
         @factory_usages = {}
-        @options = {}
+        @overrides = {}
         @examples = {}
 
         @root = Group.new(nil, nil, 0)
@@ -56,7 +60,7 @@ module TestProf
         }
 
         if @current_definition
-          @current_definition = @current_definition.dependency(params)
+          @current_definition = @current_definition.attribute(params)
         elsif location
           @current_definition = Definition.new(params)
         end
@@ -68,11 +72,11 @@ module TestProf
             factory.definition == @current_definition
           end
 
-          @options[@level] ||= {}
-          @options[@level][name] = factory || @current_definition
-          #puts "+ definition finish #{name} - #{@level} - #{@options[@level][name].inspect}"
+          @overrides[@level] ||= {}
+          @overrides[@level][name] = factory || @current_definition
+          #puts "+ definition finish #{name} - #{@level} - #{@overrides[@level][name].inspect}"
 
-          @options.delete(@level + 1)
+          @overrides.delete(@level + 1)
         end
 
         @current_definition = @current_definition&.parent
@@ -82,11 +86,11 @@ module TestProf
       def factory_started(factory, **options)
         @level += 1
 
-        #puts "= factory start #{factory} - #{@level} - #{@options[@level]&.map(&:inspect)}"
+        #puts "= factory start #{factory} - #{@level} - #{@overrides[@level]&.map(&:inspect)}"
         params = {
           name: factory,
           definition: @current_definition,
-          options: @options.delete(@level)
+          overrides: @overrides.delete(@level)
         }
 
         if @current_factory
@@ -105,8 +109,8 @@ module TestProf
           @factory_usages[factory] ||= Set.new
           @factory_usages[factory] << {name: @current_factory.parent.name, definition: @current_factory.parent.definition}
         else
-          @factory_definitions[factory] ||= Set.new
-          @factory_definitions[factory] << @current_factory
+          @factories[factory] ||= Set.new
+          @factories[factory] << @current_factory
         end
 
         @current_factory = @current_factory&.parent
