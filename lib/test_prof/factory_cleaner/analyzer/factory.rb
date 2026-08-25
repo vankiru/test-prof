@@ -33,6 +33,7 @@ module TestProf
         def association(params)
           if @definition.nil? || @definition == params[:definition]
             params[:definition] = nil
+            params[:overrides] = nil
           end
 
           name = params[:name]

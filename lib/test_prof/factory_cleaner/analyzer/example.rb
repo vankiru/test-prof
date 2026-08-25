@@ -20,9 +20,10 @@ module TestProf
           "#{@file_path}:#{@line_number}"
         end
 
-        def inspect
-          "example (#{name}, #{level})"
+        def to_s
+          "example (#{@name}, #{@level} #{location})"
         end
+        alias_method :inspect, :to_s
       end
     end
   end

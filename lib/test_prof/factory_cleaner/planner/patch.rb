@@ -4,7 +4,7 @@ module TestProf
   module FactoryCleaner
     class Planner
       class Patch
-        attr_reader :object, :dependencies
+        attr_reader :object, :dependencies, :options
 
         def initialize(object, dependencies, **options)
           @object = object

@@ -17,9 +17,10 @@ module TestProf
           "#{@file_path}:#{@line_number}"
         end
 
-        def inspect
-          "group (#{name}, #{level})"
+        def to_s
+          "group (#{@name}, #{@level} #{location})"
         end
+        alias_method :inspect, :to_s
       end
     end
   end

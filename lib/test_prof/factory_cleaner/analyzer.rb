@@ -17,8 +17,8 @@ module TestProf
       end
 
       def start
-        @factories = {}
-        @overrides = {}
+        @factories = Hash.new { |hash, key| hash[key] = Stats.new }
+        @overrides = Hash.new { |hash, key| hash[key] = {} }
 
         @root = Group.new(nil, nil, 0)
         @current_group = @root
@@ -64,16 +64,16 @@ module TestProf
       end
 
       def definition_finished(name)
-        if @current_definition
+        if @current_definition.parent
+          parent = @current_definition.parent
+
           factory = @current_example.factories.find do |factory|
             factory.definition == @current_definition
           end
 
-          @overrides[@level] ||= {}
-          @overrides[@level][name] = factory || @current_definition
-          #puts "+ definition finish #{name} - #{@level} - #{@overrides[@level][name].inspect}"
+          @overrides[parent][name] = factory || @current_definition
 
-          @overrides.delete(@level + 1)
+          #puts "=+ definition finish #{name} - #{parent} - #{@overrides[parent].keys}"
         end
 
         @current_example.definitions << @current_definition
@@ -86,11 +86,15 @@ module TestProf
       def factory_started(factory, **options)
         @level += 1
 
-        #puts "= factory start #{factory} - #{@level} - #{@overrides[@level]&.map(&:inspect)}"
+        #puts "= factory start #{factory}"
+        #puts "  o = #{@overrides[@current_definition]}"
+        #puts "  d =  #{@overrides[@current_definition]&.keys}"
+        #puts "  k =  #{options[:overrides].keys}"
+
         params = {
           name: factory,
           definition: @current_definition,
-          overrides: @overrides.delete(@level)
+          overrides: @overrides[@current_definition]#&.slice(*options[:overrides].keys)
         }
 
         if @current_factory
@@ -107,7 +111,6 @@ module TestProf
         @current_factory.examples << @current_example
 
         unless @current_factory.parent
-          @factories[factory] ||= Stats.new
           @factories[factory] << @current_factory
         end
 
