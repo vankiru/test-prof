@@ -6,6 +6,8 @@ module TestProf
       class Definition
         attr_reader :name, :parent, :location, :attributes, :examples
 
+        attr_accessor :count
+
         def initialize(params)
           @name = params[:name]
           @parent = params[:parent]
@@ -13,6 +15,11 @@ module TestProf
 
           @attributes = {}
           @examples = Set.new
+          @count = 0
+        end
+
+        def top_level?
+          parent.nil?
         end
 
         def attribute(params)
@@ -20,7 +27,7 @@ module TestProf
         end
 
         def to_s
-          "d(#{@name}, #{location})"
+          "d(#{name}:#{location.line_number})"
         end
         alias_method :inspect, :to_s
         alias_method :short_desc, :to_s
@@ -68,6 +75,30 @@ module TestProf
 
         def shifted?
           @original_line_number != @line_number
+        end
+      end
+
+      class DefinitionList
+        include Enumerable
+
+        def initialize
+          @definitions = {}
+          @top_level = Set.new
+        end
+
+        def add(definition)
+          @definitions[definition] ||= definition
+          @definitions[definition].count += 1
+
+          if @definitions[definition].top_level?
+            @top_level << @definitions[definition]
+          end
+
+          @definitions[definition]
+        end
+
+        def each(&block)
+          @definitions.each_key(&block)
         end
       end
     end

@@ -49,7 +49,7 @@ module TestProf
         end
 
         factory.implicit_associations.each do |name, association|
-          patches << build_implicit_factory_patch(association)
+          patches << build_implicit_factory_patch(association, factory)
         end
 
         factory.attributes.each do |name, attribute|
@@ -59,12 +59,12 @@ module TestProf
         @plan << ExplicitFactoryPatch.new(factory, patches, order:)
       end
 
-      def build_implicit_factory_patch(factory)
+      def build_implicit_factory_patch(factory, parent)
         patches = factory.implicit_associations.map do |name, association|
-          build_implicit_factory_patch(association)
+          build_implicit_factory_patch(association, parent)
         end
 
-        @plan << ImplicitFactoryPatch.new(factory, patches, suggestions: suggest_patches(factory))
+        @plan << suggest_patch(factory, parent) || ImplicitFactoryPatch.new(factory, patches)
       end
 
       def build_attribute_patch(definition)
@@ -75,9 +75,12 @@ module TestProf
         @plan << AttributePatch.new(definition, patches)
       end
 
-      def suggest_patches(factory)
-        @plan.ordered.select do |patch|
-          patch.explicit_factory? && patch.object.name == factory.name
+      def suggest_patch(factory, parent)
+        object = nil
+        parent
+
+        @plan.ordered.find do |patch|
+          patch.explicit_factory? && patch.object == object
         end
       end
     end

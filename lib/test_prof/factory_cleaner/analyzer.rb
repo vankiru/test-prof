@@ -1,10 +1,9 @@
-# frozen_string_literal: true
+# frozen_string_literal: true += 1
 
 require "test_prof/factory_cleaner/analyzer/group"
 require "test_prof/factory_cleaner/analyzer/example"
 require "test_prof/factory_cleaner/analyzer/definition"
 require "test_prof/factory_cleaner/analyzer/factory"
-require "test_prof/factory_cleaner/analyzer/stats"
 require "test_prof/factory_cleaner/analyzer/printer"
 
 module TestProf
@@ -17,8 +16,8 @@ module TestProf
       end
 
       def start
-        @definitions = []
-        @factories = Hash.new { |hash, key| hash[key] = Stats.new }
+        @definitions = DefinitionList.new
+        @factories = FactoryList.new
         @overrides = Hash.new { |hash, key| hash[key] = {} }
 
         @root = Group.new(nil, nil, 0)
@@ -49,9 +48,6 @@ module TestProf
       end
 
       def definition_started(name, location)
-        @level += 1
-
-        #puts "+ definition start #{name} - #{@level}"
         params = {
           name:,
           location:,
@@ -65,39 +61,27 @@ module TestProf
       end
 
       def definition_finished(name)
-        if @current_definition.parent
-          parent = @current_definition.parent
+        definition = @definitions.add(@current_definition)
 
+        if definition.parent
           factory = @current_example.factories.find do |factory|
-            factory.definition == @current_definition
+            factory.definition == definition
           end
 
-          @overrides[parent][name] = factory || @current_definition
-
-          #puts "=+ definition finish #{name} - #{parent} - #{@overrides[parent].keys}"
-        else
-          @definitions << @current_definition
+          @overrides[definition.parent][name] = factory || definition
         end
 
-        @current_example.definitions << @current_definition
-        @current_definition.examples << @current_example
+        @current_example.definitions << definition
+        definition.examples << @current_example
 
-        @current_definition = @current_definition&.parent
-        @level -= 1
+        @current_definition = @current_definition.parent
       end
 
       def factory_started(factory, **options)
-        @level += 1
-
-        #puts "= factory start #{factory}"
-        #puts "  o = #{@overrides[@current_definition]}"
-        #puts "  d =  #{@overrides[@current_definition]&.keys}"
-        #puts "  k =  #{options[:overrides].keys}"
-
         params = {
           name: factory,
           definition: @current_definition,
-          overrides: @overrides[@current_definition]#&.slice(*options[:overrides].keys)
+          overrides: @overrides[@current_definition]
         }
 
         if @current_factory
@@ -108,17 +92,12 @@ module TestProf
       end
 
       def factory_finished(factory)
-        #puts "= factory finish #{factory} - #{@level}"
+        factory = @factories.add(@current_factory)
 
-        @current_example.factories << @current_factory
-        @current_factory.examples << @current_example
+        @current_example.factories << factory
+        factory.examples << @current_example
 
-        unless @current_factory.parent
-          @factories[factory] << @current_factory
-        end
-
-        @current_factory = @current_factory&.parent
-        @level -= 1
+        @current_factory = @current_factory.parent
       end
 
       def print

@@ -9,20 +9,8 @@ module TestProf
         end
 
         def print
-          puts "=== Planner Factories Order ==="
+          puts "=== Factories Order ==="
           puts "  #{@planner.depth_order.join(" => ")}"
-
-          puts
-          puts "=== Planner Factories ==="
-          @planner.factories.each do |name, variations|
-            puts "-- #{name} --"
-            variations.each do |definition, overrides|
-              puts "=> #{definition}"
-              overrides.each do |override, count|
-                puts "    #{override} => #{count}"
-              end
-            end
-          end
 
           puts
           puts "=== Plan ==="

@@ -30,7 +30,7 @@ module TestProf
         end
 
         def location
-          definition&.location || 'n'
+          definition&.location&.line_number || 'n'
         end
 
         def association(params)
@@ -52,6 +52,10 @@ module TestProf
         def explicit?
           !!definition
         end
+        
+        def top_level?
+          parent.nil?
+        end
 
         def eql?(factory)
           factory.is_a?(Factory) &&
@@ -68,28 +72,62 @@ module TestProf
         end
 
         def to_s
-          params = implicit_associations.map do |name, association|
-            "i:#{name} => #{association.location}"
+          parts = ["#{name}:#{location}"]
+
+          implicit_associations.each do |name, association|
+            parts << "i:#{association}"
           end
 
-          params += explicit_associations.map do |name, association|
-            "e:#{name} => #{association.location}"
+          explicit_associations.map do |name, association|
+            parts << "e:#{association}"
           end
 
-          params += attributes.map do |name, definition|
-            "a:#{name} => #{definition.location}"
+          attributes.map do |name, attribute|
+            parts << "a:#{attribute}"
           end
 
-          "f(#{name}, #{location}, #{params.join(", ")})"
+          "f(#{parts.join(", ")})"
         end
         alias_method :inspect, :to_s
 
-        def short_desc
-          "f(#{name}, #{location})"
-        end
-
         def depth
           1 + explicit_associations.values.sum(&:depth) + implicit_associations.values.sum(&:depth)
+        end
+      end
+
+      class FactoryList
+        include Enumerable
+
+        def initialize
+          @factories = {}
+          @top_level = Set.new
+        end
+
+        def add(factory)
+          @factories[factory] ||= factory
+          @factories[factory].count += 1
+
+          if @factories[factory].top_level?
+            @top_level << @factories[factory]
+          end
+
+          @factories[factory]
+        end
+
+        def each(&block)
+          @factories.each_key(&block)
+        end
+
+        def top_level
+          @top_level.each_with_object({}) do |factory, hash|
+            hash[factory.name] ||= {}
+            hash[factory.name][factory.definition] ||= []
+            hash[factory.name][factory.definition] << factory
+          end
+        end
+
+        def depth_order
+          #@analyzer.factories.values.map(&:first).sort_by(&:depth).map(&:name)
         end
       end
     end

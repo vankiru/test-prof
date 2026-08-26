@@ -9,25 +9,35 @@ module TestProf
         end
 
         def print
+          #print_definitions
+          #puts
+          print_factories
+        end
+
+        def print_definitions
+          puts "======================================="
+          puts "============= Definitions ============="
+
+          @analyzer.definitions.each do |definition|
+            puts "---- #{definition} ----"
+            puts definition.examples
+          end
+        end
+
+        def print_factories
           puts "======================================="
           puts "============== Factories =============="
 
-          @analyzer.factories.each do |name, variations|
-            puts "----- #{name} -----"
-            variations.each do |factory|
-              puts "#{factory} => #{factory.count}"
+          puts @analyzer.factories.count
+          @analyzer.factories.top_level.each do |name, variations|
+            puts "-- #{name} --"
+            variations.each do |definition, overrides|
+              puts "  => #{definition}"
+              overrides.each do |override|
+                puts "    #{override} => #{override.count}"
+              end
             end
           end
-
-          #puts "======================================="
-          #puts "=========== Factory Usages ============"
-
-          #@analyzer.factory_usages.each do |name, parents|
-            #puts "=== #{name} ==="
-            #parents.each do |factory, stat|
-              #puts "(#{factory[:name]}, #{factory[:definition]&.location}) => #{stat}"
-            #end
-          #end
         end
       end
     end
