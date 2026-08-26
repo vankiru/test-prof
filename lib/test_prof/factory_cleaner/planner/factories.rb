@@ -28,7 +28,7 @@ module TestProf
         end
 
         def order
-          @analyzer.factories.values.map(&:keys).map(&:first).sort_by(&:depth).map(&:name)
+          @analyzer.factories.values.map(&:first).sort_by(&:depth).map(&:name)
         end
       end
     end

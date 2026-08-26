@@ -16,6 +16,10 @@ module TestProf
           object.name
         end
 
+        def line_number
+          object.location.line_number
+        end
+
         def explicit_factory?
           false
         end
@@ -29,16 +33,38 @@ module TestProf
       class ExplicitFactoryPatch < Patch
         alias_method :factory, :object
 
-        def order
-          @options[:order]
+        def type
+          "e"
         end
 
         def explicit_factory?
           true
         end
 
-        def type
-          "e"
+        def apply(code)
+          return if skip?
+
+          if @options[:order].zero?
+            patch_definition(code)
+          else
+            patch_override(code)
+          end
+        end
+
+        private
+
+        def patch_definition(code)
+          code.create_default(line_number)
+          code.let_it_be(line_number)
+          code.move(line_number, to)
+        end
+
+        def patch_override(code)
+          code.duplicate(line_number, to)
+        end
+
+        def skip?
+          object.count == 1
         end
       end
 
@@ -48,6 +74,17 @@ module TestProf
         def type
           "i"
         end
+
+        def apply(code)
+          code.implicit_factory(line_number)
+        end
+
+        def skip?
+          options[:suggestions]
+        end
+
+        def line_number
+        end
       end
 
       class AttributePatch < Patch
@@ -55,6 +92,10 @@ module TestProf
 
         def type
           "a"
+        end
+
+        def apply(code)
+          code.let_it_be(line_number)
         end
       end
     end

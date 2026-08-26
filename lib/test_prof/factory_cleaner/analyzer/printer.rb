@@ -14,8 +14,8 @@ module TestProf
 
           @analyzer.factories.each do |name, variations|
             puts "----- #{name} -----"
-            variations.each do |factory, stat|
-              puts "#{factory} => #{stat}"
+            variations.each do |factory|
+              puts "#{factory} => #{factory.count}"
             end
           end
 

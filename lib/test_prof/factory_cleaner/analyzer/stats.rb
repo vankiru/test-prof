@@ -7,24 +7,20 @@ module TestProf
         include Enumerable
 
         def initialize
-          @data = {}
+          @data = Set.new
         end
 
         def <<(item)
-          @data[item] ||= 0
-          @data[item] += 1
+          item.count += 1
+          @data << item
         end
 
         def each(&block)
           @data.each(&block)
         end
 
-        def keys
-          @data.keys
-        end
-
         def to_s
-          @data
+          @data.to_s
         end
       end
     end

@@ -10,13 +10,14 @@ require "test_prof/factory_cleaner/analyzer/printer"
 module TestProf
   module FactoryCleaner
     class Analyzer
-      attr_reader :factories
+      attr_reader :factories, :definitions
 
       def initialize
         @printer = Printer.new(self)
       end
 
       def start
+        @definitions = []
         @factories = Hash.new { |hash, key| hash[key] = Stats.new }
         @overrides = Hash.new { |hash, key| hash[key] = {} }
 
@@ -74,6 +75,8 @@ module TestProf
           @overrides[parent][name] = factory || @current_definition
 
           #puts "=+ definition finish #{name} - #{parent} - #{@overrides[parent].keys}"
+        else
+          @definitions << @current_definition
         end
 
         @current_example.definitions << @current_definition

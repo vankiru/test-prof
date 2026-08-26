@@ -6,6 +6,8 @@ module TestProf
       class Factory
         attr_reader :name, :parent, :definition, :explicit_associations, :implicit_associations, :attributes, :examples
 
+        attr_accessor :count
+
         def initialize(params)
           @name = params[:name]
           @parent = params[:parent]
@@ -16,6 +18,7 @@ module TestProf
           @implicit_associations = {}
 
           @examples = Set.new
+          @count = 0
 
           params[:overrides]&.each do |key, value|
             if value.is_a?(Factory)

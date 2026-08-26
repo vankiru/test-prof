@@ -40,11 +40,19 @@ module TestProf
 
         def initialize(file_path, line_number)
           @file_path = file_path
+          @original_line_number = line_number
           @line_number = line_number
         end
 
+        def shift(by)
+          @line_number += by
+        end
+
         def to_s
-          "#{@file_path}:#{@line_number}"
+          string = "#{@file_path}:#{@line_number}"
+          string += "(#{@original_line_number})" if shifted?
+
+          string
         end
 
         def eql?(location)
@@ -54,6 +62,12 @@ module TestProf
 
         def hash
           to_s.hash
+        end
+
+        private
+
+        def shifted?
+          @original_line_number != @line_number
         end
       end
     end
