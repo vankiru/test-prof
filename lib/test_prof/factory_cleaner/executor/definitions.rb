@@ -12,6 +12,7 @@ module TestProf
           from = from.first if from.is_a?(Range)
           range = from..to
 
+          puts "* shift #{range} by #{by}"
           @definitions.each do |definition, count|
             if definition.location.line_number.in?(range)
               definition.location.shift(by)

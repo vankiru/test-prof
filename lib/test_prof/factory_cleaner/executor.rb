@@ -3,7 +3,7 @@
 require "test_prof/factory_cleaner/executor/editor"
 require "test_prof/factory_cleaner/executor/definitions"
 require "test_prof/factory_cleaner/executor/code"
-require "test_prof/factory_cleaner/executor/printer"
+require "test_prof/factory_cleaner/executor/logger"
 
 module TestProf
   module FactoryCleaner
@@ -18,6 +18,8 @@ module TestProf
         puts "============ Executor Log ============="
 
         puts file_path
+        puts
+
         code = Code.new(file_path, @analyzer.definitions)
         code.read
 
@@ -25,8 +27,10 @@ module TestProf
           patch.apply(code)
         end
 
-        #@code.write
-        puts "Patching finished"
+        code.write
+
+        puts
+        puts "===> Finished"
       end
 
       def file_path

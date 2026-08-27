@@ -101,6 +101,10 @@ module TestProf
         def examples
           @examples.any? ? @examples : base&.examples
         end
+
+        def shared_example?
+          location && location.file_path.start_with?("/app/spec/support/shared_")
+        end
       end
 
       class FactoryList

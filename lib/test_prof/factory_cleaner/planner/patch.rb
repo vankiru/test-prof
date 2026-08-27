@@ -37,7 +37,7 @@ module TestProf
 
         def after_patches_line_number
           if @dependencies.any?
-            @dependencies.map(&:line_number).max + 1
+            @dependencies.map(&:line_number).max
           else
             line_number
           end
@@ -57,12 +57,15 @@ module TestProf
         end
 
         def apply(code)
+          puts
+          puts "-- #{self} --"
           if @options[:order].zero?
             code.move(line_number, to_line)
           else
             code.duplicate(line_number, to_line)
           end
 
+          puts "  #{object.count}"
           if object.count > 1
             code.create_default(to_line)
             code.let_it_be(to_line)
@@ -86,6 +89,8 @@ module TestProf
         end
 
         def apply(code)
+          puts
+          puts "-- #{self} --"
           code.implicit_factory(factory.name, line_number)
         end
 
@@ -114,6 +119,8 @@ module TestProf
         end
 
         def apply(code)
+          puts
+          puts "-- #{self} --"
           code.let_it_be(line_number)
         end
       end

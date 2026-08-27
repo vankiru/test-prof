@@ -21,6 +21,7 @@ module TestProf
             next if skip?(variation, overrides)
 
             overrides.each_with_index.reverse_each do |override, order|
+              next if override.shared_example?
               build_explicit_factory_patch(override, order)
             end
           end
@@ -66,7 +67,8 @@ module TestProf
       end
 
       def build_implicit_factory_patch(factory, parent)
-        return if suggest_patch(factory, parent)
+        suggestion = suggest_patch(factory, parent)
+        return suggestion if suggestion
 
         patches = factory.implicit_associations.map do |name, association|
           build_implicit_factory_patch(association, parent)

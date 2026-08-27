@@ -15,7 +15,7 @@ module TestProf
         def initialize(file, definitions)
           @code = Editor.new(file)
           @definitions = Definitions.new(definitions)
-          @printer = Printer.new(@code)
+          @logger = Logger.new(@code)
         end
 
         def read
@@ -29,7 +29,7 @@ module TestProf
         def let_it_be(line)
           before = @code[line].dup
           code.replace(LET_REGEX, "let_it_be\\2", line)
-          @printer.replaced(line, before)
+          @logger.replaced(line, before)
         end
 
         def create_default(line)
@@ -37,34 +37,39 @@ module TestProf
           line += 1 unless one_line?(line)
 
           code.replace(CREATE_REGEX, "\\1create_default\\3", line)
-          @printer.replaced(line, before)
+          @logger.replaced(line, before)
         end
 
         def implicit_factory(name, line)
-          code.insert("#{tab(line)}let(:#{name}) { create_default(:#{name}) }", line)
+          code.insert("let_it_be(:#{name}) { create_default(:#{name}) }\n", line)
           definitions.shift(by: 1, from: line)
 
-          @printer.inserted(line)
+          @logger.inserted(line)
         end
 
         def move(from, to)
           return if from == to
-          from = block(line) unless one_line?(from)
 
-          code.move(from, to)
-          definitions.shift(by: -from.size, from:, to:)
+          range = to_range(from)
+          code.move(range, to)
 
-          @printer.moved(from, to)
+          # shift up
+          definitions.shift(by: -range.size, from: range.last + 1, to: to + range.size - 1)
+          # shift down
+          definitions.shift(by: to - range.first, from: range.first, to: range.last)
+
+          @logger.moved(from, to)
         end
 
         def duplicate(from, to)
           return if from == to
-          from = block(line) unless one_line?(from)
 
-          code.duplicate(from, to)
-          definitions.shift(by: from.size, from: to)
+          range = to_range(from)
+          code.duplicate(range, to)
 
-          @printer.duplicated(from, to)
+          definitions.shift(by: range.size, from: to)
+
+          @logger.duplicated(from, to)
         end
 
         private
@@ -73,12 +78,12 @@ module TestProf
           code[line].match?(ONE_LINE_REGEX)
         end
 
-        def tab(line)
-          " " * tabs_count(line)
-        end
-
-        def tabs_count(line)
-          code[line].match(TABS_REGEX)[1].size
+        def to_range(from)
+          if one_line?(from)
+            from..from
+          else
+            block(from) 
+          end
         end
 
         def block(line)
@@ -88,6 +93,10 @@ module TestProf
           to += 1 until code[line].match?(regex)
 
           line..to
+        end
+
+        def tabs_count(line)
+          code[line].match(TABS_REGEX)[1].size
         end
       end
     end

@@ -3,13 +3,9 @@
 module TestProf
   module FactoryCleaner
     class Executor
-      class Printer
+      class Logger
         def initialize(code)
           @code = code
-        end
-
-        def print
-          puts "=== Executor ==="
         end
 
         def replaced(line, before)
@@ -28,16 +24,22 @@ module TestProf
         end
 
         def moved(from, to)
+          start = from.is_a?(Range) ? from.last : from
+          diff = to - start
+
           puts <<~LOG
           # move #{from} to #{to}
-            +- #{@code[from + to]}
+            +- #{@code[from + diff]}
           LOG
         end
 
         def duplicated(from, to)
+          start = from.is_a?(Range) ? from.first : from
+          diff = to - start
+
           puts <<~LOG
           # duplicate #{from} to #{to}
-            + #{@code[from + to]}
+            + #{@code[from + diff]}
           LOG
         end
       end

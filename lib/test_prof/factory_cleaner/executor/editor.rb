@@ -1,5 +1,15 @@
 # frozen_string_literal: true
 
+class Range
+  def +(by)
+    (first + by)..(last + by)
+  end
+
+  def -(by)
+    (first - by)..(last - by)
+  end
+end
+
 module TestProf
   module FactoryCleaner
     class Executor
@@ -21,7 +31,11 @@ module TestProf
         end
 
         def insert(code, line)
-          @code.insert(line - 1, code)
+          if code.is_a?(Array)
+            @code.insert(line, *code)
+          else
+            @code.insert(line, code)
+          end
         end
 
         def delete(line)
