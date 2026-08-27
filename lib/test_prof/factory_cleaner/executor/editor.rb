@@ -16,6 +16,10 @@ module TestProf
           File.write(@file, @code.join)
         end
 
+        def [](line)
+          @code[line - 1]
+        end
+
         def insert(code, line)
           @code.insert(line - 1, code)
         end

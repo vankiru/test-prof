@@ -8,27 +8,29 @@ require "test_prof/factory_cleaner/executor/printer"
 module TestProf
   module FactoryCleaner
     class Executor
-      def initialize(plan, analyzer)
-        @plan = plan
-        @file = analyzer
-        @code = Code.new(file, analyzer.definitions)
-
-        @printer = Priner.new(self)
+      def initialize(planner, analyzer)
+        @planner = planner
+        @analyzer = analyzer
       end
 
       def run
-        @code.read
+        puts "======================================="
+        puts "============ Executor Log ============="
 
-        @plan.each do |patch|
+        puts file_path
+        code = Code.new(file_path, @analyzer.definitions)
+        code.read
+
+        @planner.plan.each do |patch|
           patch.apply(code)
         end
 
-        @code.write
+        #@code.write
         puts "Patching finished"
       end
 
-      def print
-        @printer.print
+      def file_path
+        @file_path ||= @analyzer.factories.first.location.file_path
       end
     end
   end

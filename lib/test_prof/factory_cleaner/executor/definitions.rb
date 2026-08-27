@@ -8,7 +8,7 @@ module TestProf
           @definitions = definitions
         end
 
-        def shift(by:, from:, to:)
+        def shift(by:, from:, to: nil)
           from = from.first if from.is_a?(Range)
           range = from..to
 

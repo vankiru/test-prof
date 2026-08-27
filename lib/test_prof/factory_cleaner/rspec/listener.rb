@@ -9,10 +9,12 @@ module TestProf
         example_group_finished
       ].freeze
 
-      attr_reader :analyzer, :printer
+      attr_reader :analyzer, :planner, :executor
 
       def initialize
         @analyzer = FactoryCleaner.analyzer
+        @planner = Planner.new(analyzer)
+        @executor = Executor.new(planner, analyzer)
 
         @current_group = nil
         @current_example = nil
@@ -37,10 +39,11 @@ module TestProf
       end
 
       def report
-        planner = Planner.new(analyzer)
         analyzer.print
         puts
         planner.print
+        puts
+        executor.run
       end
 
       private

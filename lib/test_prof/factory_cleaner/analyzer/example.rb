@@ -8,7 +8,7 @@ module TestProf
 
         def initialize(example, group, level)
           @name = example&.fetch(:name)
-          @file_path, @line_number = example&.fetch(:location)
+          @file_path, @line_number = example&.fetch(:location)&.split(":")
           @group = group
           @level = level
 

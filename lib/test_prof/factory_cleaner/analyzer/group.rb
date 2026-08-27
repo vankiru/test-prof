@@ -8,7 +8,7 @@ module TestProf
 
         def initialize(group, parent, level)
           @name = group&.fetch(:name)
-          @file_path, @line_number = group&.fetch(:location)
+          @file_path, @line_number = group&.fetch(:location)&.split(":")
           @parent = parent
           @level = level
           @examples = []
@@ -27,7 +27,7 @@ module TestProf
         end
 
         def to_s
-          "group (#{@name}, #{@level} #{location})"
+          "group (#{@name}, #{location})"
         end
         alias_method :inspect, :to_s
 

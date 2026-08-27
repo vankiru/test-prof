@@ -4,9 +4,9 @@ module TestProf
   module FactoryCleaner
     class Analyzer
       class Definition
-        attr_reader :name, :parent, :location, :attributes, :examples
+        attr_reader :name, :parent, :location, :attributes
 
-        attr_accessor :count
+        attr_accessor :count, :base
 
         def initialize(params)
           @name = params[:name]
@@ -43,6 +43,14 @@ module TestProf
         def defined_in?(group)
           child = group.children.first
           location.line_number.between?(group.line_number, child.line_number)
+        end
+
+        def add_example(example)
+          @examples << example
+        end
+
+        def examples
+          @examples.any? ? @examples : base&.examples
         end
       end
 

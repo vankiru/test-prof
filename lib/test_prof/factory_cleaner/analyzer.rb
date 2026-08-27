@@ -72,7 +72,8 @@ module TestProf
         end
 
         @current_example.definitions << definition
-        definition.examples << @current_example
+        definition.add_example(@current_example)
+        @current_definition.base = definition
 
         @current_definition = @current_definition.parent
       end
@@ -96,7 +97,8 @@ module TestProf
 
         @current_example.factories << factory
         @current_group.factories << factory
-        factory.examples << @current_example
+        factory.add_example(@current_example)
+        @current_factory.base = factory
 
         @current_factory = @current_factory.parent
       end

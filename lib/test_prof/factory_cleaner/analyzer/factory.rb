@@ -4,9 +4,9 @@ module TestProf
   module FactoryCleaner
     class Analyzer
       class Factory
-        attr_reader :name, :parent, :definition, :explicit_associations, :implicit_associations, :attributes, :examples
+        attr_reader :name, :parent, :definition, :explicit_associations, :implicit_associations, :attributes
 
-        attr_accessor :count
+        attr_accessor :count, :base
 
         def initialize(params)
           @name = params[:name]
@@ -92,6 +92,14 @@ module TestProf
 
         def depth
           1 + explicit_associations.values.sum(&:depth) + implicit_associations.values.sum(&:depth)
+        end
+
+        def add_example(example)
+          @examples << example
+        end
+
+        def examples
+          @examples.any? ? @examples : base&.examples
         end
       end
 

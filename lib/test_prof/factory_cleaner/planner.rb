@@ -7,13 +7,15 @@ require "test_prof/factory_cleaner/planner/printer"
 module TestProf
   module FactoryCleaner
     class Planner
+      attr_reader :plan
+
       def initialize(analyzer)
         @analyzer = analyzer
         @plan = Plan.new
         @printer = Printer.new(self)
       end
 
-      def plan
+      def run
         depth_order.each do |name|
           factories[name].each do |variation, overrides|
             next if skip?(variation, overrides)

@@ -14,7 +14,7 @@ module TestProf
 
           puts
           puts "=== Plan ==="
-          @planner.plan.ordered.each do |patch|
+          @planner.run.ordered.each do |patch|
             puts "  #{patch}"
           end
         end

@@ -20,6 +20,10 @@ module TestProf
           patch
         end
 
+        def each(&block)
+          @ordered.each(&block)
+        end
+
         private
 
         def duplicate(patch)
