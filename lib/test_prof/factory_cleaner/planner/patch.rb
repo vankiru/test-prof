@@ -25,7 +25,7 @@ module TestProf
         end
 
         def to_s
-          "#{type}(#{object.short_desc}, #{dependencies.map(&:name).join("-")}, #{@options})"
+          "#{type}(#{object}, #{dependencies.map(&:name).join("-")}, #{@options})"
         end
         alias_method :inspect, :to_s
       end
@@ -42,29 +42,16 @@ module TestProf
         end
 
         def apply(code)
-          return if skip?
-
           if @options[:order].zero?
-            patch_definition(code)
+            code.move(line_number, to)
           else
-            patch_override(code)
+            code.duplicate(line_number, to)
           end
-        end
 
-        private
-
-        def patch_definition(code)
-          code.create_default(line_number)
-          code.let_it_be(line_number)
-          code.move(line_number, to)
-        end
-
-        def patch_override(code)
-          code.duplicate(line_number, to)
-        end
-
-        def skip?
-          object.count == 1
+          if object.count > 1
+            code.create_default(to)
+            code.let_it_be(to)
+          end
         end
       end
 
@@ -77,10 +64,6 @@ module TestProf
 
         def apply(code)
           code.implicit_factory(line_number)
-        end
-
-        def skip?
-          options[:suggestions]
         end
 
         def line_number

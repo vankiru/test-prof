@@ -37,8 +37,9 @@ module TestProf
       end
 
       def report
-        analyzer.print
         planner = Planner.new(analyzer)
+        analyzer.print
+        puts
         planner.print
       end
 

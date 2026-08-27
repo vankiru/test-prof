@@ -30,7 +30,6 @@ module TestProf
           "d(#{name}:#{location.line_number})"
         end
         alias_method :inspect, :to_s
-        alias_method :short_desc, :to_s
 
         def eql?(definition)
           definition.is_a?(Definition) && definition.location == location
@@ -40,6 +39,11 @@ module TestProf
         def hash
           @name.hash
         end
+
+        def defined_in?(group)
+          child = group.children.first
+          location.line_number.between?(group.line_number, child.line_number)
+        end
       end
 
       class Location
@@ -47,8 +51,8 @@ module TestProf
 
         def initialize(file_path, line_number)
           @file_path = file_path
-          @original_line_number = line_number
-          @line_number = line_number
+          @original_line_number = line_number.to_i
+          @line_number = line_number.to_i
         end
 
         def shift(by)

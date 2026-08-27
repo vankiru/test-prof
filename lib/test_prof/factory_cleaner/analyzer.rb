@@ -20,8 +20,7 @@ module TestProf
         @factories = FactoryList.new
         @overrides = Hash.new { |hash, key| hash[key] = {} }
 
-        @root = Group.new(nil, nil, 0)
-        @current_group = @root
+        @current_group = nil
         @current_example = nil
         @current_sequence = nil
 
@@ -44,6 +43,7 @@ module TestProf
       end
 
       def example_finished(example)
+        @current_group.examples << @current_example
         @level -= 1
       end
 
@@ -95,6 +95,7 @@ module TestProf
         factory = @factories.add(@current_factory)
 
         @current_example.factories << factory
+        @current_group.factories << factory
         factory.examples << @current_example
 
         @current_factory = @current_factory.parent

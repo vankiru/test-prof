@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "test_prof/factory_cleaner/planner/factories"
 require "test_prof/factory_cleaner/planner/plan"
 require "test_prof/factory_cleaner/planner/patch"
 require "test_prof/factory_cleaner/planner/printer"
@@ -11,14 +10,15 @@ module TestProf
       def initialize(analyzer)
         @analyzer = analyzer
         @plan = Plan.new
-        @factories = Factories.new(analyzer)
         @printer = Printer.new(self)
       end
 
       def plan
         depth_order.each do |name|
-          factories[name].each do |definition, overrides|
-            overrides.each_with_index do |(override, count), order|
+          factories[name].each do |variation, overrides|
+            next if skip?(variation, overrides)
+
+            overrides.each_with_index.reverse_each do |override, order|
               build_explicit_factory_patch(override, order)
             end
           end
@@ -32,14 +32,18 @@ module TestProf
       end
 
       def depth_order
-        @factories.order
+        @analyzer.factories.depth_order
       end
 
       def factories
-        @factories.factories
+        @analyzer.factories.top_level
       end
 
       private
+
+      def skip?(variation, overrides)
+        variation.nil? || overrides.all? { |override| override.count == 1 }
+      end
 
       def build_explicit_factory_patch(factory, order = 0)
         patches = []
@@ -56,15 +60,17 @@ module TestProf
           patches << build_attribute_patch(attribute)
         end
 
-        @plan << ExplicitFactoryPatch.new(factory, patches, order:)
+        @plan << ExplicitFactoryPatch.new(factory, patches.compact, order:)
       end
 
       def build_implicit_factory_patch(factory, parent)
+        return if suggest_patch(factory, parent)
+
         patches = factory.implicit_associations.map do |name, association|
           build_implicit_factory_patch(association, parent)
         end
 
-        @plan << suggest_patch(factory, parent) || ImplicitFactoryPatch.new(factory, patches)
+        @plan << ImplicitFactoryPatch.new(factory, patches.compact)
       end
 
       def build_attribute_patch(definition)
@@ -76,11 +82,28 @@ module TestProf
       end
 
       def suggest_patch(factory, parent)
-        object = nil
-        parent
+        suggestion = suggest_factory(factory, parent)
+        patch = @plan.patches[suggestion]
 
-        @plan.ordered.find do |patch|
-          patch.explicit_factory? && patch.object == object
+        @plan << patch if patch
+      end
+
+      def suggest_factory(factory, parent)
+        @analyzer.factories.find do |suggestion|
+          next false unless suggestion.top_level?
+          next false unless suggestion.name == factory.name 
+
+          groups = parent.examples.map do |example|
+            defined_in_group(parent, example)
+          end
+
+          groups.uniq.size == 1
+        end
+      end
+
+      def defined_in_group(factory, example)
+        example.ancestors.reverse.find do |group|
+          factory.definition.defined_in?(group)
         end
       end
     end

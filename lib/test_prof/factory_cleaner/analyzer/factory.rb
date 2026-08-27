@@ -30,7 +30,7 @@ module TestProf
         end
 
         def location
-          definition&.location&.line_number || 'n'
+          definition&.location
         end
 
         def association(params)
@@ -72,7 +72,7 @@ module TestProf
         end
 
         def to_s
-          parts = ["#{name}:#{location}"]
+          parts = ["#{name}:#{location&.line_number || "n"}"]
 
           implicit_associations.each do |name, association|
             parts << "i:#{association}"
@@ -119,7 +119,7 @@ module TestProf
         end
 
         def top_level
-          @top_level.each_with_object({}) do |factory, hash|
+          @top_level_factories ||= @top_level.each_with_object({}) do |factory, hash|
             hash[factory.name] ||= {}
             hash[factory.name][factory.definition] ||= []
             hash[factory.name][factory.definition] << factory
@@ -127,7 +127,7 @@ module TestProf
         end
 
         def depth_order
-          #@analyzer.factories.values.map(&:first).sort_by(&:depth).map(&:name)
+          @top_level.uniq { |factory| factory.name }.sort_by(&:depth).map(&:name)
         end
       end
     end
