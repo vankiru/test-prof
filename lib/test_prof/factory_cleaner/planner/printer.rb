@@ -9,13 +9,17 @@ module TestProf
         end
 
         def print
-          puts "=== Factories Order ==="
-          puts "  #{@planner.depth_order.join(" => ")}"
+          puts "=== Plans ==="
 
-          puts
-          puts "=== Plan ==="
-          @planner.run.ordered.each do |patch|
-            puts "  #{patch}"
+          @planner.plans.each do |file_path, plan|
+            puts
+            puts "=== #{file_path} ==="
+            puts "  #{plan.depth_order.join(" => ")}"
+
+            puts
+            plan.ordered.each do |patch|
+              puts "  #{patch}"
+            end
           end
         end
       end

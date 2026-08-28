@@ -32,9 +32,9 @@ module TestProf
 
         def insert(code, line)
           if code.is_a?(Array)
-            @code.insert(line, *code)
+            @code.insert(line - 1, *code)
           else
-            @code.insert(line, code)
+            @code.insert(line - 1, code)
           end
         end
 

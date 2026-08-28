@@ -40,8 +40,13 @@ module TestProf
           @logger.replaced(line, before)
         end
 
-        def implicit_factory(name, line)
-          code.insert("let_it_be(:#{name}) { create_default(:#{name}) }\n", line)
+        def implicit_factory(name, line, default = false)
+          if default
+            code.insert("let_it_be(:#{name}) { create_default(:#{name}) }\n", line)
+          else
+            code.insert("let_it_be(:#{name}) { create(:#{name}) }\n", line)
+          end
+
           definitions.shift(by: 1, from: line)
 
           @logger.inserted(line)
@@ -90,13 +95,16 @@ module TestProf
           regex = /^(\s{#{tabs_count(line)}})(end|})/
 
           to = line + 1
-          to += 1 until code[line].match?(regex)
+          until code[to].match?(regex)
+            to += 1 
+          end
 
           line..to
         end
 
         def tabs_count(line)
-          code[line].match(TABS_REGEX)[1].size
+          match = code[line].match(TABS_REGEX)
+          match ? match[1].size : 0
         end
       end
     end

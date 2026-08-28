@@ -17,24 +17,32 @@ module TestProf
         puts "======================================="
         puts "============ Executor Log ============="
 
-        puts file_path
-        puts
 
-        code = Code.new(file_path, @analyzer.definitions)
-        code.read
-
-        @planner.plan.each do |patch|
-          patch.apply(code)
+        @planner.plans.each do |file_path, plan|
+          patch_file(file_path, plan) unless plan.shared_example?
         end
-
-        code.write
 
         puts
         puts "===> Finished"
       end
 
-      def file_path
-        @file_path ||= @analyzer.factories.first.location.file_path
+      private
+
+      def patch_file(file_path, plan)
+        puts
+        puts "=== #{file_path} ==="
+        puts
+
+        code = Code.new(file_path, @analyzer.definitions[file_path])
+        code.read
+
+        plan.each do |patch|
+          puts "-- #{patch} --"
+          patch.apply(code)
+          puts
+        end
+
+        code.write
       end
     end
   end

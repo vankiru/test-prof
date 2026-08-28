@@ -4,7 +4,7 @@ module TestProf
   module FactoryCleaner
     class Analyzer
       class Definition
-        attr_reader :name, :parent, :location, :attributes
+        attr_reader :name, :parent, :attributes
 
         attr_accessor :count, :base
 
@@ -52,10 +52,18 @@ module TestProf
         def examples
           @examples.any? ? @examples : base&.examples
         end
+
+        def location
+          if base.nil? || base.object_id == self.object_id
+            @location
+          else
+            base.location
+          end
+        end
       end
 
       class Location
-        attr_reader :file_path, :line_number
+        attr_reader :file_path, :line_number, :original_line_number
 
         def initialize(file_path, line_number)
           @file_path = file_path

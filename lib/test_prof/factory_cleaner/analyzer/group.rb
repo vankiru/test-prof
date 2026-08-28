@@ -4,7 +4,7 @@ module TestProf
   module FactoryCleaner
     class Analyzer
       class Group
-        attr_reader :parent, :examples, :factories, :children
+        attr_reader :parent, :examples, :factories, :children, :file_path
 
         def initialize(group, parent, level)
           @name = group&.fetch(:name)
@@ -36,7 +36,11 @@ module TestProf
         end
 
         def ancestors
-          @ancestors ||= parent.nil? ? [] : ([parent] + parent.ancestors)
+          @ancestors ||= top_level? ? [] : ([parent] + parent.ancestors)
+        end
+
+        def top_level?
+          parent.nil?
         end
       end
     end

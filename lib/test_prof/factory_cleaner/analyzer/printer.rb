@@ -28,13 +28,17 @@ module TestProf
           puts "======================================="
           puts "============== Factories =============="
 
-          puts @analyzer.factories.count
-          @analyzer.factories.top_level.each do |name, variations|
-            puts "-- #{name} --"
-            variations.each do |definition, overrides|
-              puts "  => #{definition}"
-              overrides.each do |override|
-                puts "    #{override} => #{override.count}"
+          @analyzer.factories.each do |file_path, factories|
+            puts
+            puts "===== #{file_path} ====="
+
+            factories.top_level.each do |name, variations|
+              puts "-- #{name} --"
+              variations.each do |definition, overrides|
+                puts "  => #{definition}"
+                overrides.each do |override|
+                  puts "    #{override} => #{override.count}"
+                end
               end
             end
           end

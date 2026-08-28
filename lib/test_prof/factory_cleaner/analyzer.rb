@@ -16,23 +16,24 @@ module TestProf
       end
 
       def start
-        @definitions = DefinitionList.new
-        @factories = FactoryList.new
+        @definitions = Hash.new { |hash, key| hash[key] = DefinitionList.new }
+        @factories = Hash.new { |hash, key| hash[key] = FactoryList.new }
+        @groups = {}
         @overrides = Hash.new { |hash, key| hash[key] = {} }
 
+        @current_file = nil
         @current_group = nil
-        @current_example = nil
-        @current_sequence = nil
-
         @level = 0
       end
 
       def group_started(group)
         @level += 1
         @current_group = Group.new(group, @current_group, @level)
+        @current_file = @current_group.file_path
       end
 
       def group_finished(group)
+        @groups[@current_file] = @current_group if @current_group.top_level?
         @current_group = @current_group.parent
         @level -= 1
       end
@@ -48,20 +49,15 @@ module TestProf
       end
 
       def definition_started(name, location)
-        params = {
-          name:,
-          location:,
-        }
-
         if @current_definition
-          @current_definition = @current_definition.attribute(params)
+          @current_definition = @current_definition.attribute(name:, location:)
         elsif location
-          @current_definition = Definition.new(params)
+          @current_definition = Definition.new(name:, location:)
         end
       end
 
       def definition_finished(name)
-        definition = @definitions.add(@current_definition)
+        definition = @definitions[@current_file].add(@current_definition)
 
         if definition.parent
           factory = @current_example.factories.find do |factory|
@@ -93,7 +89,7 @@ module TestProf
       end
 
       def factory_finished(factory)
-        factory = @factories.add(@current_factory)
+        factory = @factories[@current_file].add(@current_factory)
 
         @current_example.factories << factory
         @current_group.factories << factory

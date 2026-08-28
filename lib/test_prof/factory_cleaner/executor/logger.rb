@@ -6,9 +6,16 @@ module TestProf
       class Logger
         def initialize(code)
           @code = code
+          @off = false
+        end
+
+        def off?
+          @off
         end
 
         def replaced(line, before)
+          return if off?
+
           puts <<~LOG
           # replace at #{line}
             - #{before.strip} 
@@ -17,6 +24,8 @@ module TestProf
         end
 
         def inserted(line)
+          return if off?
+
           puts <<~LOG
           # insert at #{line}
             + #{@code[line].strip}
@@ -24,6 +33,8 @@ module TestProf
         end
 
         def moved(from, to)
+          return if off?
+
           start = from.is_a?(Range) ? from.last : from
           diff = to - start
 
@@ -34,6 +45,8 @@ module TestProf
         end
 
         def duplicated(from, to)
+          return if off?
+
           start = from.is_a?(Range) ? from.first : from
           diff = to - start
 

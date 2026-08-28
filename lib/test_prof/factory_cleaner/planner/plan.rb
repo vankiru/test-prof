@@ -4,11 +4,25 @@ module TestProf
   module FactoryCleaner
     class Planner
       class Plan
-        attr_reader :patches, :ordered
+        attr_reader :patches, :ordered, :file_path
 
-        def initialize
+        def initialize(analyzer, file_path)
+          @analyzer = analyzer
+          @file_path = file_path
           @patches = {}
           @ordered = []
+        end
+
+        def shared_example?
+          file_path.include?("spec/support/shared_")
+        end
+
+        def factories
+          @analyzer.factories[file_path]
+        end
+
+        def depth_order
+          @analyzer.factories[file_path].depth_order
         end
 
         def <<(patch)
