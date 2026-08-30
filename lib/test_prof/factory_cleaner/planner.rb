@@ -7,6 +7,15 @@ require "test_prof/factory_cleaner/planner/printer"
 module TestProf
   module FactoryCleaner
     class Planner
+      FACTORIES = %i[
+        organization
+        billing_entity
+        billable_metric
+        plan
+        customer
+        invoice
+      ].freeze
+
       attr_reader :plans
 
       def initialize(analyzer)
@@ -48,20 +57,11 @@ module TestProf
       end
 
       def skip?(variation, overrides)
-        variation.nil? || overrides.all? { |override| override.count == 1 }
+        variation.nil? || overrides.all? { |override| override.count < 2 }
       end
 
-      FACTORIES = %i[
-        organization
-        billing_entity
-        billable_metric
-        plan
-        customer
-        subscription
-      ].freeze
-
-      def skip_factory?(factory)
-        !FACTORIES.include?(factory.name)
+      def patch_factory?(factory)
+        FACTORIES.include?(factory.name)
       end
 
       def build_explicit_factory_patch(factory, order = 0)
@@ -75,26 +75,32 @@ module TestProf
           patches << build_implicit_factory_patch(association, factory)
         end
 
+        next unless patch_factory?(factory)
+
         factory.attributes.each do |name, attribute|
           patches << build_attribute_patch(attribute)
         end
 
-        unless skip_factory?(factory)
-          @current_plan << ExplicitFactoryPatch.new(factory, patches.compact, order:)
-        end
+        @current_plan << ExplicitFactoryPatch.new(factory, patches.compact, order:)
       end
 
       def build_implicit_factory_patch(factory, parent)
-        suggestion = suggest_patch(factory, parent)
-        return suggestion if suggestion
+        suggestion = find_suggestion(factory, parent)
+
+        patch = suggest_patch(factory, suggestion)
+        return patch if patch
 
         patches = factory.implicit_associations.map do |name, association|
           build_implicit_factory_patch(association, parent)
         end
 
-        unless skip_factory?(factory)
-          @current_plan << ImplicitFactoryPatch.new(factory, patches.compact)
+        if suggestion[:definition]
+          patch = SuggestedDefinitionPatch.new(factory, patches.compact, definition: suggestion[:definition])
+        else
+          patch = ImplicitFactoryPatch.new(factory, patches.compact, group: suggestion[:group])
         end
+
+        @current_plan << patch if patch_factory?(factory)
       end
 
       def build_attribute_patch(definition)
@@ -105,30 +111,35 @@ module TestProf
         @current_plan << AttributePatch.new(definition, patches)
       end
 
-      def suggest_patch(factory, parent)
-        suggestion = suggest_factory(factory, parent)
-        patch = @current_plan.patches[suggestion]
+      def find_suggestion(factory, parent)
+        groups = parent.examples.map do |example|
+          find_factory_definition_group(factory, example)
+        end
 
-        @current_plan << patch if patch
+        unique = groups.compact.uniq { |group| group[:group] }
+        return unique.first if unique.one?
       end
 
-      def suggest_factory(factory, parent)
-        @current_plan.factories.find do |suggestion|
-          next false unless suggestion.top_level?
-          next false unless suggestion.name == factory.name 
-
-          groups = parent.examples.map do |example|
-            defined_in_group(suggestion, example)
+      def find_factory_definition_group(factory, example)
+        example.ancestors.reverse.find do |group|
+          factories = group.factories.select do |suggestion|
+            suggestion.top_level? && suggestion.name == factory.name 
           end
 
-          groups.compact.uniq.size == 1
+          definition = group.definitions.find do |suggestion|
+            suggestion.name == factory.name 
+          end
+
+          if factories.any? || definitions.any?
+            break {group:, factories:, definition:}
+          end
         end
       end
 
-      def defined_in_group(factory, example)
-        example.ancestors.reverse.find do |group|
-          factory.definition&.defined_in?(group)
-        end
+      def suggest_patch(factory, suggestion)
+        return unless suggestion[:factories].one?
+        patch = @current_plan.patches[suggestion[:factories].first]
+        patch.default!
       end
     end
   end

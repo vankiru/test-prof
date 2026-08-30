@@ -105,6 +105,10 @@ module TestProf
         def shared_example?
           location && location.file_path.start_with?("/app/spec/support/shared_")
         end
+
+        def defined_in?(group)
+          definition&.defined_in?(group)
+        end
       end
 
       class FactoryList

@@ -40,14 +40,34 @@ module TestProf
           @logger.replaced(line, before)
         end
 
-        def implicit_factory(name, line, default = false)
-          if default
-            code.insert("let_it_be(:#{name}) { create_default(:#{name}) }\n", line)
+        def definition_to_factory(name, line)
+          before = @code[line].dup
+
+          if one_line?(line)
+            code.replace(ONE_LINE_REGEX, "\\1\\2 { create_default(:#{name})}", line)
           else
-            code.insert("let_it_be(:#{name}) { create(:#{name}) }\n", line)
+            line += 1
+            code.delete(line)
+            code.insert("create_default(:#{name})", line)
           end
 
-          definitions.shift(by: 1, from: line)
+          @logger.replaced(line, before)
+        end
+
+        def implicit_factory(name, line, first = false)
+          if first
+            before_all = <<~CODE
+            before_all do
+              create_default(:#{name})
+            end
+
+            CODE
+
+            definitions.shift(by: 3, from: line)
+          else
+            code.insert("create_default(:#{name})\n", line)
+            definitions.shift(by: 1, from: line)
+          end
 
           @logger.inserted(line)
         end

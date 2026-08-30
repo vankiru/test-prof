@@ -39,10 +39,10 @@ module TestProf
       end
 
       def report
-        #analyzer.print
+        analyzer.print
         puts
         planner.run
-        #planner.print
+        planner.print
         puts
         executor.run
       end

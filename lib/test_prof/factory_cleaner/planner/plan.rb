@@ -5,12 +5,14 @@ module TestProf
     class Planner
       class Plan
         attr_reader :patches, :ordered, :file_path
+        attr_accessor :before_all_last_line
 
         def initialize(analyzer, file_path)
           @analyzer = analyzer
           @file_path = file_path
           @patches = {}
           @ordered = []
+          @before_all = false
         end
 
         def shared_example?
@@ -28,6 +30,7 @@ module TestProf
         def <<(patch)
           return duplicate(patch) if duplicate?(patch)
 
+          patch.plan = self
           @patches[patch.object] = patch
           @ordered << patch
 
@@ -36,6 +39,15 @@ module TestProf
 
         def each(&block)
           @ordered.each(&block)
+        end
+
+        def before_all?
+          @before_all
+        end
+
+        def before_all!
+          @before_all = true
+          @before_all_last_line += 1
         end
 
         private

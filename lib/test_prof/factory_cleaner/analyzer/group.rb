@@ -42,6 +42,10 @@ module TestProf
         def top_level?
           parent.nil?
         end
+
+        def first_nested
+          groups.chidlren.first
+        end
       end
     end
   end

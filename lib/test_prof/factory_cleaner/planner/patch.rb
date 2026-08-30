@@ -5,8 +5,10 @@ module TestProf
     class Planner
       class Patch
         attr_reader :object, :dependencies, :options
+        attr_accessor :plan
 
         def initialize(object, dependencies, **options)
+          @plan = plan
           @object = object
           @dependencies = dependencies
           @options = options
@@ -18,10 +20,6 @@ module TestProf
 
         def line_number
           object.location.line_number
-        end
-
-        def object_defined?
-          true
         end
 
         def explicit_factory?
@@ -36,11 +34,7 @@ module TestProf
         private
 
         def after_patches_line_number
-          if @dependencies.any?
-            @dependencies.map(&:line_number).max
-          else
-            line_number
-          end
+          @dependencies.map(&:line_number).max || line_number
         end
         alias_method :to_line, :after_patches_line_number
       end
@@ -57,16 +51,17 @@ module TestProf
         end
 
         def apply(code)
-          if @options[:order].zero?
-            code.move(line_number, to_line)
-          else
-            code.duplicate(line_number, to_line)
-          end
+          #if @options[:order].zero?
+            #code.move(line_number, to_line)
+          #else
+            #code.duplicate(line_number, to_line)
+          #end
 
-          if object.count > 1
-            code.create_default(to_line)
-            code.let_it_be(to_line)
-          end
+          return if object.count == 1
+
+          code.create_default(line_number) if options[:default]
+          code.let_it_be(line_number)
+          code.move(line_number, to_line)
         end
 
         def to_line
@@ -75,6 +70,10 @@ module TestProf
           else
             line_number
           end
+        end
+
+        def default!
+          options[:default] = true
         end
       end
 
@@ -86,21 +85,40 @@ module TestProf
         end
 
         def apply(code)
-          code.implicit_factory(factory.name, line_number, create_default?)
+          code.implicit_factory(factory.name, insert_line_number, first: !plan.before_all?)
+          plan.before_all!
+        end
+
+        def insert_line_number
+          if plan.before_all?
+            @line_number = plan.befor_all_last_line + 1
+          else
+            first_nested = options[:group].first_nested.line_number - 1
+            plan.before_all_last_line = first_nested + 1
+            @line_number = first_nested + 1
+            first_nested
+          end
+        end
+      end
+
+      class SuggestedDefinitionPatch < Patch
+        alias_method :factory, :object
+
+        def type
+          "i"
+        end
+
+        def definition
+          options[:definition]
+        end
+
+        def apply(code)
+          code.definition_to_factory(factory.name, line_number)
+          #code.move(line)
         end
 
         def line_number
-          return defined_patches_line_number if defined_patches_line_number
-
-          factory.examples.first.ancestors.last.line_number + 1
-        end
-
-        def defined_patches_line_number
-          @dependencies.select(&:object_defined?).map(&:line_number).max
-        end
-
-        def object_defined?
-          false
+          definition.line_number
         end
       end
 
