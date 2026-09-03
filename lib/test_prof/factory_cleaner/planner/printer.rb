@@ -9,7 +9,8 @@ module TestProf
         end
 
         def print
-          puts "=== Plans ==="
+          puts "======================================="
+          puts "================ Plans ================"
 
           @planner.plans.each do |file_path, plan|
             puts

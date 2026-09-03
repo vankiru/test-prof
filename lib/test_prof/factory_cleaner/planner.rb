@@ -11,10 +11,13 @@ module TestProf
         organization
         billing_entity
         billable_metric
+        add_on
+        membership
         plan
         customer
-        invoice
       ].freeze
+        #invoice
+        #subscription
 
       attr_reader :plans
 
@@ -41,6 +44,7 @@ module TestProf
 
       def build_plan(file_path, factories)
         @current_plan = Plan.new(@analyzer, file_path)
+        @current_top_group = @analyzer.groups[file_path]
 
         factories.depth_order.each do |name|
           factories.top_level[name].each do |variation, overrides|
@@ -61,7 +65,8 @@ module TestProf
       end
 
       def patch_factory?(factory)
-        FACTORIES.include?(factory.name)
+        true
+        #FACTORIES.include?(factory.name)
       end
 
       def build_explicit_factory_patch(factory, order = 0)
@@ -75,10 +80,10 @@ module TestProf
           patches << build_implicit_factory_patch(association, factory)
         end
 
-        next unless patch_factory?(factory)
+        return unless patch_factory?(factory)
 
         factory.attributes.each do |name, attribute|
-          patches << build_attribute_patch(attribute)
+          patches << build_attribute_patch(attribute, factory)
         end
 
         @current_plan << ExplicitFactoryPatch.new(factory, patches.compact, order:)
@@ -94,19 +99,27 @@ module TestProf
           build_implicit_factory_patch(association, parent)
         end
 
-        if suggestion[:definition]
-          patch = SuggestedDefinitionPatch.new(factory, patches.compact, definition: suggestion[:definition])
+        if suggestion
+          if suggestion[:definition]
+            patch = SuggestedDefinitionPatch.new(factory, patches.compact, definition: suggestion[:definition])
+          else
+            patch = ImplicitFactoryPatch.new(factory, patches.compact, group: suggestion[:group])
+          end
         else
-          patch = ImplicitFactoryPatch.new(factory, patches.compact, group: suggestion[:group])
+          patch = ImplicitFactoryPatch.new(factory, patches.compact, group: @current_top_group)
         end
 
         @current_plan << patch if patch_factory?(factory)
       end
 
-      def build_attribute_patch(definition)
+      def build_attribute_patch(definition, parent)
         patches = definition.attributes.map do |name, attribute|
-          build_attribute_patch(attribute)
+          build_attribute_patch(attribute, parent)
         end
+
+        suggestion = find_suggestion(definition, parent)
+        patch = suggest_attribute_patch(definition, suggestion)
+        return patch if patch
 
         @current_plan << AttributePatch.new(definition, patches)
       end
@@ -116,7 +129,7 @@ module TestProf
           find_factory_definition_group(factory, example)
         end
 
-        unique = groups.compact.uniq { |group| group[:group] }
+        unique = groups.compact.uniq { |group| group[:factories] }
         return unique.first if unique.one?
       end
 
@@ -124,22 +137,38 @@ module TestProf
         example.ancestors.reverse.find do |group|
           factories = group.factories.select do |suggestion|
             suggestion.top_level? && suggestion.name == factory.name 
-          end
+          end.uniq
 
           definition = group.definitions.find do |suggestion|
             suggestion.name == factory.name 
           end
 
-          if factories.any? || definitions.any?
+          if factories.any? || definition
             break {group:, factories:, definition:}
           end
         end
       end
 
       def suggest_patch(factory, suggestion)
+        return if suggestion.nil?
         return unless suggestion[:factories].one?
+
         patch = @current_plan.patches[suggestion[:factories].first]
-        patch.default!
+        patch&.default!
+        patch
+      end
+
+      def suggest_attribute_patch(factory, suggestion)
+        return if suggestion.nil?
+        return if !suggestion[:factories].one? && suggestion[:definition].nil?
+
+        patch = @current_plan.patches[suggestion[:factories].first]
+        patch ||= @current_plan.patches.find do |patch, _|
+          patch.name == suggestion[:definition].name
+        end.last
+
+        patch&.default!
+        patch
       end
     end
   end

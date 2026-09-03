@@ -42,6 +42,7 @@ module TestProf
           puts
         end
 
+      ensure
         code.write
       end
     end

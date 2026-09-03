@@ -6,9 +6,11 @@ module TestProf
       class Code
         LET_REGEX = /(let!?|let_it_be)(\(:[a-z]\w*\)\s(do|{).*)/.freeze
         CREATE_REGEX = /(.*\s*)(create)(\(:.*)/.freeze
+        DEFINITION_REGEX = /(let!?|let_it_be|subject)(\(:[a-z]\w*\))?\s*{.*}/.freeze
+        CONTEXT_REGEX = /(context|describe)\s*\".*"/.freeze
 
         ONE_LINE_REGEX = /(let!?|let_it_be|subject)(\(:[a-z]\w*\))?\s*{/.freeze
-        TABS_REGEX = /^(\s*)\w.*/.freeze
+        TABS_REGEX = /^(\s*)((\w|}).*)/.freeze
 
         attr_reader :file, :definitions, :code
 
@@ -16,6 +18,7 @@ module TestProf
           @code = Editor.new(file)
           @definitions = Definitions.new(definitions)
           @logger = Logger.new(@code)
+          @counter = 0
         end
 
         def read
@@ -44,7 +47,7 @@ module TestProf
           before = @code[line].dup
 
           if one_line?(line)
-            code.replace(ONE_LINE_REGEX, "\\1\\2 { create_default(:#{name})}", line)
+            code.replace(DEFINITION_REGEX, "let_it_be\\2 { create_default(:#{name})}", line)
           else
             line += 1
             code.delete(line)
@@ -54,16 +57,14 @@ module TestProf
           @logger.replaced(line, before)
         end
 
-        def implicit_factory(name, line, first = false)
+        def implicit_factory(name, line, first)
           if first
-            before_all = <<~CODE
-            before_all do
-              create_default(:#{name})
-            end
+            code.insert("before_all do\n", line)
+            code.insert("  create_default(:#{name})\n", line + 1)
+            code.insert("end\n", line + 2)
+            code.insert("\n", line + 3)
 
-            CODE
-
-            definitions.shift(by: 3, from: line)
+            definitions.shift(by: 4, from: line)
           else
             code.insert("create_default(:#{name})\n", line)
             definitions.shift(by: 1, from: line)
@@ -72,35 +73,54 @@ module TestProf
           @logger.inserted(line)
         end
 
-        def move(from, to)
-          return if from == to
+        def move(from, after)
+          return if from == after
 
+          after += to_range(after).size
           range = to_range(from)
-          code.move(range, to)
+
+          tab(range, after)
+          code.move(range, after)
 
           # shift up
-          definitions.shift(by: -range.size, from: range.last + 1, to: to + range.size - 1)
+          definitions.shift(by: -range.size, from: range.last + 1, to: after + range.size - 2)
           # shift down
-          definitions.shift(by: to - range.first, from: range.first, to: range.last)
+          definitions.shift(by: after - range.first - 1, from: range.first, to: range.last)
 
-          @logger.moved(from, to)
+          @logger.moved(range, after)
         end
 
-        def duplicate(from, to)
-          return if from == to
+        def duplicate(from, after)
+          return if from == after
 
           range = to_range(from)
-          code.duplicate(range, to)
+          tab(range, after)
+          code.duplicate(range, after)
 
-          definitions.shift(by: range.size, from: to)
+          definitions.shift(by: range.size, from: after - 1)
 
-          @logger.duplicated(from, to)
+          @logger.duplicated(from, after)
+        end
+
+        def tab(range, as)
+          as -= 1 while empty_line?(as)
+          tabs = tabs_count(as)
+
+          range.each do |line|
+            code.replace(TABS_REGEX, "#{" " * tabs}\\2", line)
+          end
+
+          @logger.tabed(range, as)
         end
 
         private
 
         def one_line?(line)
           code[line].match?(ONE_LINE_REGEX)
+        end
+
+        def empty_line?(line)
+          code[line] == "\n"
         end
 
         def to_range(from)

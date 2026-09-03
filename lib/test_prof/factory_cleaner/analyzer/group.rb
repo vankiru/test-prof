@@ -4,16 +4,19 @@ module TestProf
   module FactoryCleaner
     class Analyzer
       class Group
-        attr_reader :parent, :examples, :factories, :children, :file_path
+        attr_reader :parent, :examples, :factories, :children, :file_path, :definitions
 
         def initialize(group, parent, level)
           @name = group&.fetch(:name)
           @file_path, @line_number = group&.fetch(:location)&.split(":")
           @parent = parent
           @level = level
+
           @examples = []
-          @factories = []
           @children = []
+
+          @factories = []
+          @definitions = []
 
           parent.children << self if parent
         end
@@ -41,10 +44,6 @@ module TestProf
 
         def top_level?
           parent.nil?
-        end
-
-        def first_nested
-          groups.chidlren.first
         end
       end
     end

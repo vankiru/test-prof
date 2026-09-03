@@ -23,6 +23,8 @@ module TestProf
           params[:overrides]&.each do |key, value|
             if value.is_a?(Factory)
               @explicit_associations[key] = value
+            #elsif value.defines_through_factory?
+              #@implicit_associations[key] = value
             else
               @attributes[key] = value
             end

@@ -6,7 +6,7 @@ module TestProf
       class Definition
         attr_reader :name, :parent, :attributes
 
-        attr_accessor :count, :base
+        attr_accessor :count, :base, :defines_factory
 
         def initialize(params)
           @name = params[:name]
@@ -16,6 +16,13 @@ module TestProf
           @attributes = {}
           @examples = Set.new
           @count = 0
+
+          @defines_factory = false
+        end
+
+        def defines_through_factory?
+          base&.defines_factory || base&.parent&.defines_through_factory?
+          #@defines_factory || @parent&.defines_through_factory?
         end
 
         def top_level?

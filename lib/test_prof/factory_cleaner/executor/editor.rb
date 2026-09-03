@@ -18,6 +18,10 @@ module TestProf
           @file = file
         end
 
+        def array
+          @code
+        end
+
         def read
           @code = File.readlines(@file)
         end

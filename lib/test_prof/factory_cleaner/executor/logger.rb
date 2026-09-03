@@ -18,8 +18,8 @@ module TestProf
 
           puts <<~LOG
           # replace at #{line}
-            - #{before.strip} 
-            + #{@code[line].strip}
+            - #{before.rstrip} 
+            + #{@code[line].rstrip}
           LOG
         end
 
@@ -28,7 +28,7 @@ module TestProf
 
           puts <<~LOG
           # insert at #{line}
-            + #{@code[line].strip}
+            + #{@code[line].rstrip}
           LOG
         end
 
@@ -40,7 +40,8 @@ module TestProf
 
           puts <<~LOG
           # move #{from} to #{to}
-            +- #{@code[from + diff]}
+            > #{@code[to - 2]}
+            + #{@code[to - 1]}
           LOG
         end
 
@@ -52,7 +53,17 @@ module TestProf
 
           puts <<~LOG
           # duplicate #{from} to #{to}
-            + #{@code[from + diff]}
+            + #{@code[to].rstrip}
+          LOG
+        end
+
+        def tabed(range, as)
+          return if off?
+
+          puts <<~LOG
+          # tab as #{as}
+            > #{@code[as].rstrip}
+            + #{@code[range.first].rstrip}
           LOG
         end
       end
