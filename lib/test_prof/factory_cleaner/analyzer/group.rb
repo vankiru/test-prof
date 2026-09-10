@@ -4,39 +4,28 @@ module TestProf
   module FactoryCleaner
     class Analyzer
       class Group
-        attr_reader :parent, :examples, :factories, :children, :file_path, :definitions
+        attr_reader :location, :parent, :groups, :examples, :factories, :definitions
 
         def initialize(group, parent, level)
           @name = group&.fetch(:name)
-          @file_path, @line_number = group&.fetch(:location)&.split(":")
+          @location = Location.new(group&.fetch(:location)&.split(":"))
+
           @parent = parent
           @level = level
 
           @examples = []
-          @children = []
+          @groups = []
 
           @factories = []
           @definitions = []
 
-          parent.children << self if parent
-        end
-
-        def location
-          "#{@file_path}:#{@line_number}"
-        end
-
-        def line_number
-          @line_number.to_i
+          parent.groups << self if parent
         end
 
         def to_s
           "group (#{@name}, #{location})"
         end
         alias_method :inspect, :to_s
-
-        def top_level_factories
-          factories.select(&:top_level?)
-        end
 
         def ancestors
           @ancestors ||= top_level? ? [] : ([parent] + parent.ancestors)
