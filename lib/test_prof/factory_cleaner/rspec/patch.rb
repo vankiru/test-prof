@@ -44,37 +44,27 @@ module TestProf
 
         # Apply the memoization. The method has been defined in an ancestor
         # module so we can use `super` here to get the value.
-        location = parse_location
+        location = FactoryCleaner::Location.local
+
         if block.arity == 1
           define_method(name) do
-            FactoryCleaner.analyzer.definition_started(name, location)
+            FactoryCleaner.analyzer.let_started(name, location)
             begin
               __memoized.fetch_or_store(name) { super(RSpec.current_example, &nil) }
             ensure
-              FactoryCleaner.analyzer.definition_finished(name)
+              FactoryCleaner.analyzer.let_finished(name)
             end
           end
         else
           define_method(name) do
-            FactoryCleaner.analyzer.definition_started(name, location)
+            FactoryCleaner.analyzer.let_started(name, location)
             begin
               __memoized.fetch_or_store(name) { super(&nil) }
             ensure
-              FactoryCleaner.analyzer.definition_finished(name)
+              FactoryCleaner.analyzer.let_finished(name)
             end
           end
         end
-      end
-
-      private
-
-      LOCAL_REGEX = %r{/app/spec/.+_spec\.rb}
-
-      def parse_location
-        first_local_caller = caller.find { |line| line.match?(LOCAL_REGEX) }
-        return unless first_local_caller
-
-        file_path, line_number = /(.+?):(\d+)(?:|:\d+)/.match(first_local_caller).captures
       end
     end
   end

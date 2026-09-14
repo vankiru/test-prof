@@ -3,6 +3,7 @@
 require "test_prof/factory_cleaner/analyzer"
 require "test_prof/factory_cleaner/planner"
 require "test_prof/factory_cleaner/executor"
+require "test_prof/factory_cleaner/location"
 require "test_prof/factory_cleaner/rspec"
 require "test_prof/factory_cleaner/factory_bot"
 

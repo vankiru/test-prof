@@ -6,12 +6,11 @@ module TestProf
       class Example
         attr_reader :location, :group, :factories, :definitions
 
-        def initialize(example, group, level)
+        def initialize(example, group)
           @name = example&.fetch(:name)
           @location = Location.new(example&.fetch(:location)&.split(":"))
 
           @group = group
-          @level = level
 
           @factories = Set.new
           @definitions = Set.new
@@ -20,7 +19,7 @@ module TestProf
         end
 
         def to_s
-          "example (#{@name}, #{@level} #{location})"
+          "example (#{@name}, #{location})"
         end
         alias_method :inspect, :to_s
 

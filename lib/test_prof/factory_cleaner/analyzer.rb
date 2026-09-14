@@ -16,37 +16,52 @@ module TestProf
       end
 
       def start
-        @definitions = Hash.new { |hash, key| hash[key] = DefinitionList.new }
-        @factories = Hash.new { |hash, key| hash[key] = FactoryList.new }
-        @groups = {}
-        @overrides = Hash.new { |hash, key| hash[key] = {} }
+        #@definitions = Hash.new { |hash, key| hash[key] = DefinitionList.new }
+        #@factories = Hash.new { |hash, key| hash[key] = FactoryList.new }
+        #@groups = {}
+        #@overrides = Hash.new { |hash, key| hash[key] = {} }
 
-        @current_file = nil
         @current_group = nil
+        @current_block = nil
+
+        @specs = []
         @level = 0
       end
 
       def group_started(group)
         @level += 1
         @current_group = Group.new(group, @current_group, @level)
-        @current_file = @current_group.file_path
       end
 
       def group_finished(group)
-        @groups[@current_file] = @current_group if @current_group.top_level?
+        @specs << @current_group if @current_group.top_level?
         @current_group = @current_group.parent
         @level -= 1
       end
 
       def example_started(example)
-        @level += 1
-        @current_example = Example.new(example, @current_group, @level)
+        @current_example = Example.new(example, @current_group)
       end
 
       def example_finished(example)
         @current_group.examples << @current_example
-        @level -= 1
+        @current_example = nil
       end
+
+      def let_started(name, location)
+        @current_block = Block::Let.new(name, location)
+      end
+
+      def let_finished(name)
+        @current_block = nil
+      end
+
+      def factory_started(name, **options)
+      end
+
+      def factory_finished(name)
+      end
+
 
       def definition_started(name, location)
         #puts "= definition started #{name}:#{location}"
