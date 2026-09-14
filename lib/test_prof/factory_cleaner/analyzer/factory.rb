@@ -8,6 +8,9 @@ module TestProf
 
         attr_accessor :count, :base
 
+        def initialize(name, parent, options)
+        end
+
         def initialize(params)
           @name = params[:name]
           @parent = params[:parent]
@@ -111,41 +114,70 @@ module TestProf
         def defined_in?(group)
           definition&.defined_in?(group)
         end
-      end
 
-      class FactoryList
-        include Enumerable
+        def definition_started(name, location)
+          #puts "= definition started #{name}:#{location}"
 
-        def initialize
-          @factories = {}
-          @top_level = Set.new
-        end
-
-        def add(factory)
-          @factories[factory] ||= factory
-          @factories[factory].count += 1
-
-          if @factories[factory].top_level?
-            @top_level << @factories[factory]
-          end
-
-          @factories[factory]
-        end
-
-        def each(&block)
-          @factories.each_key(&block)
-        end
-
-        def top_level
-          @top_level_factories ||= @top_level.each_with_object({}) do |factory, hash|
-            hash[factory.name] ||= {}
-            hash[factory.name][factory.definition] ||= []
-            hash[factory.name][factory.definition] << factory
+          if @current_definition
+            @current_definition = @current_definition.attribute(name:, location:)
+          elsif location
+            @current_definition = Definition.new(name:, location:)
           end
         end
 
-        def depth_order
-          @top_level.uniq { |factory| factory.name }.sort_by(&:depth).map(&:name)
+        def definition_finished(name)
+          definition = @definitions[@current_file].add(@current_definition)
+
+          if @current_definition.parent
+            factory = @current_example.factories.find do |factory|
+              factory.definition == definition
+            end
+
+            @overrides[@current_definition.parent][name] = factory || definition
+          end
+          #puts " $ #{name} - #{@current_definition.parent} - #{@overrides[@current_definition.parent]}"
+
+          @current_example.definitions << definition
+          @current_group.definitions << definition
+          definition.add_example(@current_example)
+
+          @current_definition.base = definition
+          @current_definition.base.defines_factory = definition.defines_factory
+
+          #puts " $ #{name} - #{@current_definition} - #{@current_definition.parent} - #{@current_definition.defines_factory} - #{@current_definition.defines_through_factory?}"
+          #puts " $ #{name} - #{definition} - #{definition.parent} - #{definition.defines_factory} - #{definition.defines_through_factory?}"
+
+          @current_definition = @current_definition.parent
+          #puts "= definition finished #{name}"
+        end
+
+        def factory_started(factory, **options)
+          #puts "+ factory started #{factory}"
+          params = {
+            name: factory,
+            definition: @current_definition,
+            overrides: @overrides[@current_definition]
+          }
+
+          if @current_factory
+            @current_factory = @current_factory.association(params)
+          else
+            @current_factory = Factory.new(params)
+          end
+        end
+
+        def factory_finished(factory)
+          factory = @factories[@current_file].add(@current_factory)
+
+          @current_example.factories << factory
+          @current_group.factories << factory
+
+          factory.add_example(@current_example)
+          @current_factory.base = factory
+          @current_definition&.defines_factory = true
+
+          @current_factory = @current_factory.parent
+          #puts "+ factory finished #{factory}}"
         end
       end
     end

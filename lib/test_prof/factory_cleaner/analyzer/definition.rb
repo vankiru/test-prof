@@ -68,30 +68,6 @@ module TestProf
           end
         end
       end
-
-      class DefinitionList
-        include Enumerable
-
-        def initialize
-          @definitions = {}
-          @top_level = Set.new
-        end
-
-        def add(definition)
-          @definitions[definition] ||= definition
-          @definitions[definition].count += 1
-
-          if @definitions[definition].top_level?
-            @top_level << @definitions[definition]
-          end
-
-          @definitions[definition]
-        end
-
-        def each(&block)
-          @definitions.each_key(&block)
-        end
-      end
     end
   end
 end

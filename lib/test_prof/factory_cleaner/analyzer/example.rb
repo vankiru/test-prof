@@ -23,6 +23,10 @@ module TestProf
         end
         alias_method :inspect, :to_s
 
+        def to_block
+          Block::It.new(@name, @location)
+        end
+
         def ancestors
           @ancestors ||= [group] + group.ancestors
         end
