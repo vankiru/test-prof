@@ -7,7 +7,7 @@ module TestProf
         class Instance
           attr_reader :type, :example
 
-          def initialize(type, example)
+          def initialize(type, example = nil)
             @type = type
             @example = example
           end

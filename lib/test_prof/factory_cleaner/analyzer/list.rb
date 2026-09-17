@@ -3,14 +3,20 @@
 module TestProf
   module FactoryCleaner
     class Analyzer
-      class FactoryList
+      class List
         include Enumerable
 
         def initialize
-          @factories = {}
+          @items = {}
           @top_level = Set.new
         end
 
+        def <<(item)
+          @items[item] ||= item
+        end
+      end
+
+      class FactoryList < List
         def add(factory)
           @factories[factory] ||= factory
           @factories[factory].count += 1
@@ -39,14 +45,7 @@ module TestProf
         end
       end
 
-      class DefinitionList
-        include Enumerable
-
-        def initialize
-          @definitions = {}
-          @top_level = Set.new
-        end
-
+      class DefinitionList < List
         def add(definition)
           @definitions[definition] ||= definition
           @definitions[definition].count += 1

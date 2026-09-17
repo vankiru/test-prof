@@ -5,6 +5,8 @@ module TestProf
     class Analyzer
       class Factory
         class Type
+          attr_reader :name
+
           def initialize(params)
             @name = params[:name]
             @parent = params[:parent]

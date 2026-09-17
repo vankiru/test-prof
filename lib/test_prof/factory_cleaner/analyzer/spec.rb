@@ -7,7 +7,7 @@ module TestProf
         def initialize(*args)
           super(*args)
 
-          @factory_types = []
+          @factory_types = List.new
         end
       end
     end
