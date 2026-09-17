@@ -16,11 +16,6 @@ module TestProf
       end
 
       def start
-        #@definitions = Hash.new { |hash, key| hash[key] = DefinitionList.new }
-        #@factories = Hash.new { |hash, key| hash[key] = FactoryList.new }
-        #@groups = {}
-        #@overrides = Hash.new { |hash, key| hash[key] = {} }
-
         @current_spec = nil
         @current_group = nil
         @current_block = nil
@@ -64,18 +59,21 @@ module TestProf
       end
 
       def factory_started(name, options)
-        @current_factory = Factory::Template.new(
+        @current_template = Factory::Template.new(
           name:,
-          parent: @current_factory,
+          parent: @current_template,
           block: @current_block,
-          spec: @current_spec,
           **options
         )
       end
 
       def factory_finished(name)
-        @current_factory.finalize
-        @current_factory = @current_factory.parent
+        factory = @current_template.finalize(@current_spec)
+
+        @current_example.factories << factory
+        @current_group.factories << factory
+
+        @current_template = @current_template.parent
       end
 
       def print
