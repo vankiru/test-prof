@@ -4,9 +4,9 @@ module TestProf
   module FactoryCleaner
     class Analyzer
       class Definition
-        attr_reader :name, :parent, :attributes
+        attr_reader :name, :parent, :attributes, :location
 
-        attr_accessor :count, :base, :defines_factory
+        attr_accessor :count
 
         def initialize(params)
           @name = params[:name]
@@ -16,21 +16,10 @@ module TestProf
           @attributes = {}
           @examples = Set.new
           @count = 0
-
-          @defines_factory = false
-        end
-
-        def defines_through_factory?
-          base&.defines_factory || base&.parent&.defines_through_factory?
-          #@defines_factory || @parent&.defines_through_factory?
         end
 
         def top_level?
           parent.nil?
-        end
-
-        def attribute(params)
-          @attributes[params[:name]] = Definition.new(parent: self, **params)
         end
 
         def to_s
@@ -42,6 +31,10 @@ module TestProf
           definition.is_a?(Definition) && definition.location == location
         end
         alias_method :==, :eql?
+
+        def attribute(params)
+          @attributes[params[:name]] = Definition.new(parent: self, **params)
+        end
 
         def hash
           @name.hash
@@ -58,14 +51,6 @@ module TestProf
 
         def examples
           @examples.any? ? @examples : base&.examples
-        end
-
-        def location
-          if base.nil? || base.object_id == self.object_id
-            @location
-          else
-            base.location
-          end
         end
       end
     end

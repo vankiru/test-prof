@@ -13,11 +13,9 @@ module TestProf
             @definition = params[:definition]
 
             @attributes = {}
-            @explicit_associations = {}
-            @implicit_associations = {}
+            @associations = {}
 
             @examples = Set.new
-            @count = 0
 
             params[:overrides]&.each do |key, value|
               if value.is_a?(Factory)
@@ -34,26 +32,6 @@ module TestProf
             definition&.location
           end
 
-          def association(params)
-            if @definition.nil? || @definition == params[:definition]
-              params[:definition] = nil
-              params[:overrides] = nil
-            end
-
-            name = params[:name]
-            factory = Factory.new(parent: self, **params)
-
-            if factory.explicit?
-              @explicit_associations[name] = factory
-            else
-              @implicit_associations[name] = factory
-            end
-          end
-
-          def explicit?
-            !!definition
-          end
-          
           def top_level?
             parent.nil?
           end
@@ -75,12 +53,8 @@ module TestProf
           def to_s
             parts = ["#{name}:#{location&.line_number || "n"}"]
 
-            implicit_associations.each do |name, association|
-              parts << "i:#{association}"
-            end
-
-            explicit_associations.map do |name, association|
-              parts << "e:#{association}"
+            associations.each do |name, association|
+              parts << "#{association.index}:#{association}"
             end
 
             attributes.map do |name, attribute|

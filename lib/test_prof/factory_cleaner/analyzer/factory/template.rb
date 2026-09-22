@@ -22,64 +22,30 @@ module TestProf
           end
 
           def finalize(spec)
+            build_type(spec)
+            build_instance(spec)
+          end
+
+          private
+
+          def build_type(spec)
             association_types = associations.map(&:type)
 
             @type = Factory::Type.new(
               name:
+              definition:,
               associations: association_types
             )
 
             association_types.each do |type|
               type.parent = @type
             end
+
+            spec.factory_types << @type
           end
 
-          def definition_finished(name)
-            definition = @definitions[@current_file].add(@current_definition)
-
-            if @current_definition.parent
-              factory = @current_example.factories.find do |factory|
-                factory.definition == definition
-              end
-
-              @overrides[@current_definition.parent][name] = factory || definition
-            end
-
-            @current_example.definitions << definition
-            @current_group.definitions << definition
-            definition.add_example(@current_example)
-
-            @current_definition.base = definition
-            @current_definition.base.defines_factory = definition.defines_factory
-
-            @current_definition = @current_definition.parent
-          end
-
-          def factory_started(factory, **options)
-            params = {
-              name: factory,
-              definition: @current_definition,
-              overrides: @overrides[@current_definition]
-            }
-
-            if @current_factory
-              @current_factory = @current_factory.association(params)
-            else
-              @current_factory = Factory.new(params)
-            end
-          end
-
-          def factory_finished(factory)
-            factory = @factories[@current_file].add(@current_factory)
-
-            @current_example.factories << factory
-            @current_group.factories << factory
-
-            factory.add_example(@current_example)
-            @current_factory.base = factory
-            @current_definition&.defines_factory = true
-
-            @current_factory = @current_factory.parent
+          def build_instance
+            @instance = Factory::Instance.new(@type)
           end
         end
       end
