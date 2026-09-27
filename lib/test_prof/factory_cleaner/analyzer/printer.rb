@@ -9,31 +9,21 @@ module TestProf
         end
 
         def print
-          #print_definitions
-          #puts
-          print_factories
-        end
+          puts "======================================"
+          puts "============== Analyzer =============="
 
-        def print_definitions
-          puts "======================================="
-          puts "============= Definitions ============="
-
-          @analyzer.definitions.each do |definition|
-            puts "---- #{definition} ----"
-            puts definition.examples
+          @analyzer.specs.each do |spec|
+            print_spec(spec)
           end
         end
 
-        def print_factories
-          puts "======================================="
-          puts "============== Factories =============="
+        def print_spec(spec)
+          puts "====== #{file_path} ======"
 
-          @analyzer.factories.each do |file_path, factories|
-            puts
-            puts "===== #{file_path} ====="
-
-            factories.top_level.each do |name, variations|
+          spec.factories.each do |factories|
+            factories.each do |name, variations|
               puts "-- #{name} --"
+
               variations.each do |definition, overrides|
                 puts "  => #{definition}"
                 overrides.each do |override|

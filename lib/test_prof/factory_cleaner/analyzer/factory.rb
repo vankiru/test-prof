@@ -1,5 +1,9 @@
 # frozen_string_literal: true
 
+require "test_prof/factory_cleaner/analyzer/factory/template"
+require "test_prof/factory_cleaner/analyzer/factory/instance"
+require "test_prof/factory_cleaner/analyzer/factory/type"
+
 module TestProf
   module FactoryCleaner
     class Analyzer

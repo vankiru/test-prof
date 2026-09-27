@@ -1,7 +1,11 @@
 # frozen_string_literal: true += 1
 
+require "test_prof/factory_cleaner/analyzer/list"
+require "test_prof/factory_cleaner/analyzer/location"
+require "test_prof/factory_cleaner/analyzer/spec"
 require "test_prof/factory_cleaner/analyzer/group"
 require "test_prof/factory_cleaner/analyzer/example"
+require "test_prof/factory_cleaner/analyzer/block"
 require "test_prof/factory_cleaner/analyzer/definition"
 require "test_prof/factory_cleaner/analyzer/factory"
 require "test_prof/factory_cleaner/analyzer/printer"
