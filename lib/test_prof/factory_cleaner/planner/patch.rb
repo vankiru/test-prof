@@ -34,7 +34,6 @@ module TestProf
         private
 
         def last_patch
-          #@dependencies.max_by(&:line_number)
           @dependencies.max_by { |dependency| dependency.line_number || -1 }
         end
 
@@ -67,9 +66,6 @@ module TestProf
 
           code.create_default(line_number) if options[:default]
           code.let_it_be(line_number)
-        end
-
-        def same_group?
         end
 
         def after_line
