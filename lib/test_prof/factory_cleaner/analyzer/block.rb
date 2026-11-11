@@ -17,25 +17,25 @@ module TestProf
           end
         end
 
-        class LetItBe
+        class LetItBe < Block
           def initialize(location)
             super(:let_it_be, location)
           end
         end
 
-        class Before
+        class Before < Block
           def initialize(location)
             super(:before, location)
           end
         end
 
-        class After
+        class After < Block
           def initialize(location)
             super(:after, location)
           end
         end
 
-        class It
+        class Example < Block
           def initialize(location)
             super(:it, location)
           end

@@ -6,14 +6,12 @@ module TestProf
       class Location
         attr_reader :file_path, :line_number, :original_line_number
 
-        def initialize(file_path, line_number)
-          @file_path = file_path
-          @line_number = line_number.to_i
-          @original_line_number = line_number.to_i
-        end
+        def initialize(location, line_number = nil)
+          path, line = location.split(":")
 
-        def shift(by)
-          @line_number += by
+          @file_path = path
+          @line_number = (line_number || line).to_i
+          @original_line_number = @line_number
         end
 
         def to_s
@@ -29,7 +27,11 @@ module TestProf
         alias_method :==, :eql?
 
         def hash
-          to_s.hash
+          @hash ||= "#{file_path}:#{@line_number}".hash
+        end
+
+        def shift(by)
+          @line_number += by
         end
 
         private

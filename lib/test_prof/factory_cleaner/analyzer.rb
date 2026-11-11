@@ -45,7 +45,7 @@ module TestProf
 
       def example_started(example)
         @current_example = Example.new(example, @current_group)
-        @current_block = @current_example.to_block
+        @current_block = @current_example.as_block
       end
 
       def example_finished(example)
@@ -63,21 +63,21 @@ module TestProf
       end
 
       def factory_started(name, options)
-        @current_template = Factory::Template.new(
+        @current_factory = Factory::Type.new(
           name:,
-          parent: @current_template,
+          parent: @current_factory,
           block: @current_block,
           **options
         )
       end
 
       def factory_finished(name)
-        factory = @current_template.finalize(@current_spec)
+        factory = @current_factory.finalize(@current_spec)
 
         @current_example.factories << factory
         @current_group.factories << factory
 
-        @current_template = @current_template.parent
+        @current_factory = @current_factory.parent
       end
 
       def print

@@ -5,84 +5,47 @@ module TestProf
     class Analyzer
       class Factory
         class Type
-          attr_reader :name
+          attr_reader :block, :associations
 
-          def initialize(params)
-            @name = params[:name]
-            @parent = params[:parent]
-            @definition = params[:definition]
+          def initialize(name:, parent:, block:, **options)
+            @name = name
+            @parent = parent
+            @block = block
+            @options = options
+            @associations = []
 
-            @attributes = {}
-            @associations = {}
-
-            @examples = Set.new
-
-            params[:overrides]&.each do |key, value|
-              if value.is_a?(Factory)
-                @explicit_associations[key] = value
-              #elsif value.defines_through_factory?
-                #@implicit_associations[key] = value
-              else
-                @attributes[key] = value
-              end
-            end
+            parent.associations << self if parent
           end
 
-          def location
-            definition&.location
+          def definition
+            block unless parent.block == block
           end
 
-          def top_level?
-            parent.nil?
+          def finalize(spec)
+            build_type(spec)
+            build_instance(spec)
           end
 
-          def eql?(factory)
-            factory.is_a?(Factory) &&
-              name == factory.name &&
-              definition == factory.definition &&
-              explicit_associations == factory.explicit_associations &&
-              implicit_associations == factory.implicit_associations &&
-              attributes == factory.attributes
-          end
-          alias_method :==, :eql?
+          private
 
-          def hash
-            @name.hash
-          end
+          def build_type(spec)
+            association_types = associations.map(&:type)
 
-          def to_s
-            parts = ["#{name}:#{location&.line_number || "n"}"]
+            @type = Factory::Type.new(
+              name:
+              definition:,
+              associations: association_types
+            )
 
-            associations.each do |name, association|
-              parts << "#{association.index}:#{association}"
+            association_types.each do |type|
+              type.parent = @type
             end
 
-            attributes.map do |name, attribute|
-              parts << "a:#{attribute}"
-            end
-
-            "f(#{parts.join(", ")})"
-          end
-          alias_method :inspect, :to_s
-
-          def depth
-            1 + explicit_associations.values.sum(&:depth) + implicit_associations.values.sum(&:depth)
+            spec.factory_types << @type
           end
 
-          def add_example(example)
-            @examples << example
-          end
-
-          def examples
-            @examples.any? ? @examples : base&.examples
-          end
-
-          def shared_example?
-            location && location.file_path.start_with?("/app/spec/support/shared_")
-          end
-
-          def defined_in?(group)
-            definition&.defined_in?(group)
+          def build_instance
+            @instance = Factory::Instance.new(@type)
           end
         end
       end
